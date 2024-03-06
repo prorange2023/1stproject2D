@@ -6,6 +6,9 @@ TagManager:
   tags:
   - Unit
   - Ground
+  - EnemyUlti
+  - EnemyLongRange
+  - EnemyShortRange
   layers:
   - Default
   - TransparentFX

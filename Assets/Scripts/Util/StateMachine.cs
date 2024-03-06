@@ -41,6 +41,7 @@ public class StateMachine : MonoBehaviour
 
     public void ChangeState(string stateName)
     {
+        Debug.Log($"{curState} -> {stateName}");
         curState.Exit();
         curState = stateDic[stateName];
         curState.Enter();
@@ -80,6 +81,10 @@ public class BaseState
     {
         ChangeState(stateType.ToString());
     }
+
+    
+
+    public virtual void TakeDamage(int damage) { }
 
     public virtual void Enter() { }
     public virtual void Update() { }

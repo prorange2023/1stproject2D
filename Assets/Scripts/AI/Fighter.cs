@@ -7,14 +7,20 @@ public class Fighter : BattleAI
 {
     public enum State { Idle, Trace, Avoid, Battle, Die }
 
+    [Header("Component")]
+    [SerializeField] Animator animator;
+
+    [Header("Spec")]
     [SerializeField] float moveSpeed;
     [SerializeField] float attackRange;
     [SerializeField] float avoidRange;
     [SerializeField] float hp;
+    [SerializeField] int damage;
 
     private StateMachine stateMachine;
-    private Transform target;
-    
+    private Transform firstTarget;
+    private Transform secondTarget;
+    private Transform enemyUlti;
     private Vector2 startPos;
 
     private void Awake()
@@ -30,9 +36,11 @@ public class Fighter : BattleAI
 
     private void Start()
     {
+
         // 태그 변경하는것도 만들어야되네?! 오마이갓뜨!
-        target = GameObject.FindWithTag("Enemy").transform;
-        
+        firstTarget = GameObject.FindWithTag("EnemyLongRange").transform;
+        //secondTarget = GameObject.FindWithTag("EnemyShortRange").transform;
+        enemyUlti = GameObject.FindWithTag("EnemyUlti").transform;
         startPos = transform.position;
     }
 
@@ -45,7 +53,9 @@ public class Fighter : BattleAI
         protected float attackRange => owner.attackRange;
         protected float avoidRange => owner.avoidRange;
         protected float hp => owner.hp;
-        protected Transform target => owner.target;
+        protected Transform firstTarget => owner.firstTarget;
+
+        protected Transform enemyUlti => owner.enemyUlti;
         protected Vector2 startPos => owner.startPos;
 
         public FighterState(Fighter owner)
@@ -57,28 +67,31 @@ public class Fighter : BattleAI
     private class IdleState : FighterState
     {
         public IdleState(Fighter owner) : base(owner) { }
-
+        public override void Update()
+        {
+            
+        }
         public override void Transition()
         {
-            if (Vector2.Distance(target.position, transform.position) > attackRange)
+            if (Vector2.Distance(firstTarget.position, transform.position) > attackRange)
             {
                 ChangeState(State.Trace);
-                Debug.Log("idle to trace");
+                
             }
-            else if (Vector2.Distance(target.position, transform.position) < avoidRange && Vector2.Distance(target.position, transform.position) < attackRange)
+            else if (Vector2.Distance(enemyUlti.position, transform.position) < avoidRange)
             {
                 ChangeState(State.Avoid);
-                Debug.Log("idle to avoid");
+                
             }
-            else if (Vector2.Distance(target.position, transform.position) <= attackRange && Vector2.Distance(target.position, transform.position) > attackRange)
+            else if (Vector2.Distance(firstTarget.position, transform.position) <= attackRange && Vector2.Distance(enemyUlti.position, transform.position) > avoidRange)
             {
                 ChangeState(State.Battle);
-                Debug.Log("idle to battle");
+                
             }
             else if (hp <= 0)
             {
                 ChangeState(State.Die);
-                Debug.Log("idle to avoid");
+                
             }
         }
     }
@@ -89,27 +102,27 @@ public class Fighter : BattleAI
 
         public override void Update()
         {
-            Vector2 dir = (target.position - transform.position).normalized;
+            Vector2 dir = (firstTarget.position - transform.position).normalized;
             transform.Translate(dir * moveSpeed * Time.deltaTime, Space.World);
-            Debug.Log("Trace");
+            
         }
 
         public override void Transition()
         {
-            if (Vector2.Distance(target.position, transform.position) <= attackRange && Vector2.Distance(target.position, transform.position) > avoidRange)
+            if (Vector2.Distance(firstTarget.position, transform.position) <= attackRange && Vector2.Distance(enemyUlti.position, transform.position) > avoidRange)
             {
                 ChangeState(State.Battle);
-                Debug.Log("trace to battle");
+                
             }
-            else if (Vector2.Distance(target.position, transform.position) < avoidRange)
+            else if (Vector2.Distance(enemyUlti.position, transform.position) < avoidRange)
             {
                 ChangeState(State.Avoid);
-                Debug.Log("trace to avoid");
+                
             }
             else if (hp <= 0)
             {
                 ChangeState(State.Die);
-                Debug.Log("trace to die");
+                
             }
         }
     }
@@ -121,29 +134,28 @@ public class Fighter : BattleAI
 
         public override void Update()
         {
-            //Transform enemyUlti = GameObject.FindWithTag("EnemyUlti").transform;
-            //// 도망치는걸 여기다 구현
-            //Vector2 dir = (enemyUlti.position - transform.position).normalized;
-            //transform.Translate(-dir * moveSpeed * Time.deltaTime, Space.World);
-            //Debug.Log("why continue avoid???");
+            // 도망치는걸 여기다 구현
+            Vector2 dir = (enemyUlti.position - transform.position).normalized;
+            transform.Translate(-dir * moveSpeed * Time.deltaTime, Space.World);
+            
         }
 
         public override void Transition()
         {
-            if (Vector2.Distance(target.position, transform.position) <= attackRange && Vector2.Distance(target.position, transform.position) >= avoidRange)
+            if (Vector2.Distance(firstTarget.position, transform.position) <= attackRange && Vector2.Distance(enemyUlti.position, transform.position) > avoidRange)
             {
                 ChangeState(State.Battle);
-                Debug.Log("avoid to battle");
+                
             }
-            else if (Vector2.Distance(target.position, transform.position) > attackRange)
+            else if (Vector2.Distance(firstTarget.position, transform.position) > attackRange && Vector2.Distance(enemyUlti.position, transform.position) > avoidRange)
             {
                 ChangeState(State.Trace);
-                Debug.Log("avoid to trace");
+                
             }
             else if (hp <= 0)
             {
                 ChangeState(State.Die);
-                Debug.Log("avoid to die");
+                
             }
         }
     }
@@ -154,25 +166,22 @@ public class Fighter : BattleAI
 
         public override void Update()
         {
-            Debug.Log("arrowattack");
+            Debug.Log("punch punch");
         }
 
         public override void Transition()
         {
-            if (Vector2.Distance(target.position, transform.position) < avoidRange)
+            if (Vector2.Distance(enemyUlti.position, transform.position) < avoidRange && Vector2.Distance(firstTarget.position, transform.position) < attackRange)
             {
                 ChangeState(State.Avoid);
-                Debug.Log("battle to avoid");
             }
-            else if (Vector2.Distance(target.position, transform.position) > attackRange)
+            else if (Vector2.Distance(firstTarget.position, transform.position) > attackRange)
             {
                 ChangeState(State.Trace);
-                Debug.Log("battle to trace");
             }
             else if (hp <= 0)
             {
                 ChangeState(State.Die);
-                Debug.Log("battle to avoid");
             }
         }
     }
