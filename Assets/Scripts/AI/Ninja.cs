@@ -1,27 +1,47 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Unity.IO.LowLevel.Unsafe;
 using UnityEngine;
 
-public class Ninja : MonoBehaviour
+public class Ninja : BattleAI
 {
+
+    
     public enum State { Idle, Trace, Battle, Die }
 
     [Header("Component")]
     [SerializeField] Animator animator;
 
-    [Header("Spec")]
+
+    [Header("Attack")]
+    [SerializeField] bool debug;
+    [SerializeField] LayerMask layerMask;
+    [SerializeField] float range;
+    [SerializeField, Range(0, 360)] float angle;
+    [SerializeField] int deal;
+    [SerializeField] int attackCost;
+
+    private float cosRange;
+
+    Collider[] colliders = new Collider[20];
+
+
+    [Header("Spec")]    
     [SerializeField] float moveSpeed;
     [SerializeField] float attackRange;
     [SerializeField] float avoidRange;
     [SerializeField] float hp;
-    [SerializeField] int damage;
+    [SerializeField] float attackCooltime;
+    
 
     private StateMachine stateMachine;
     private Transform firstTarget;
     private Transform secondTarget;
     private Transform enemyUlti;
     private Vector2 startPos;
+    private float preAngle;
+    
 
     private void Awake()
     {
@@ -33,6 +53,7 @@ public class Ninja : MonoBehaviour
         stateMachine.AddState(State.Die, new DieState(this));
         stateMachine.InitState(State.Idle);
     }
+    
 
     private void Start()
     {
@@ -46,6 +67,11 @@ public class Ninja : MonoBehaviour
         startPos = transform.position;
     }
 
+    IEnumerator AttackCostCoroutine()
+    {
+        yield return new WaitForSeconds(attackCooltime);
+        attackCost = 1;
+    }
     private class NinjaState : BaseState
     {
         protected Ninja owner;
@@ -55,6 +81,8 @@ public class Ninja : MonoBehaviour
         protected float attackRange => owner.attackRange;
         protected float avoidRange => owner.avoidRange;
         protected float hp => owner.hp;
+
+        protected Animator animator => owner.animator;
         protected Transform firstTarget => owner.firstTarget;
 
         protected Transform enemyUlti => owner.enemyUlti;
@@ -77,18 +105,19 @@ public class Ninja : MonoBehaviour
             if (Vector2.Distance(firstTarget.position, transform.position) > attackRange)
             {
                 ChangeState(State.Trace);
-                Debug.Log("Ninja idle to trace");
+                animator.SetBool("Run", true);
             }
             
             else if (Vector2.Distance(firstTarget.position, transform.position) <= attackRange)
             {
                 ChangeState(State.Battle);
-                Debug.Log("Ninja idle to battle");
+                animator.SetBool("Battle", true);
+
             }
             else if (hp <= 0)
             {
                 ChangeState(State.Die);
-                Debug.Log("Ninja idle to avoid");
+                animator.SetBool("Die", true);
             }
         }
     }
@@ -99,27 +128,24 @@ public class Ninja : MonoBehaviour
 
         public override void Update()
         {
-            
             Vector2 dir = (firstTarget.position - transform.position).normalized;
             transform.Translate(dir * moveSpeed * Time.deltaTime, Space.World);
-            Debug.Log("Trace");
         }
-
-        
-
 
         public override void Transition()
         {
             if (Vector2.Distance(firstTarget.position, transform.position) <= attackRange)
             {
                 ChangeState(State.Battle);
-                Debug.Log("Ninja trace to battle");
+                animator.SetBool("Run", false);
+                animator.SetBool("Battle", true);
             }
             
             else if (hp <= 0)
             {
                 ChangeState(State.Die);
-                Debug.Log("Ninja trace to die");
+                animator.SetBool("Run", false);
+                animator.SetBool("Die", true);
             }
         }
     }
@@ -128,23 +154,43 @@ public class Ninja : MonoBehaviour
     private class BattleState : NinjaState
     {
         public BattleState(Ninja owner) : base(owner) { }
+        
+        public void Attack()
+        {
 
+            int size = Physics.OverlapSphereNonAlloc(transform.position, owner.range, owner.colliders, owner.layerMask);
+            for (int i = 0; i < size; i++)
+            {
+                Vector3 dirToTarget = (owner.colliders[i].transform.position - transform.position).normalized;
+                
+                if (Vector3.Dot(dirToTarget, transform.forward) < owner.cosRange)
+                    continue;
+
+                IDamagable damagable = owner.colliders[i].GetComponent<IDamagable>();
+                damagable?.TakeDamage(owner.deal);
+            }
+        }
         public override void Update()
         {
-            Debug.Log("knife knife");
-        }
+            
+            Attack();
+            UnityEngine.Debug.Log("knife knife");
 
+        }
+        
         public override void Transition()
         {
             if (Vector2.Distance(firstTarget.position, transform.position) > attackRange)
             {
                 ChangeState(State.Trace);
-                Debug.Log("Ninja to trace");
+                animator.SetBool("Battle", false);
+                animator.SetBool("Run", true);
             }
             else if (hp <= 0)
             {
                 ChangeState(State.Die);
-                Debug.Log("Ninja to avoid");
+                animator.SetBool("Battle", false);
+                animator.SetBool("Die", true);
             }
         }
     }

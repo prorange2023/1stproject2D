@@ -15,7 +15,7 @@ public class Archer : BattleAI
     [SerializeField] float attackRange;
     [SerializeField] float avoidRange;
     [SerializeField] float hp;
-    [SerializeField] int damage;
+    [SerializeField] int deal;
 
     private StateMachine stateMachine;
     private Transform firstTarget;
@@ -23,6 +23,8 @@ public class Archer : BattleAI
     private Transform enemyUlti;
     private Vector2 startPos;
 
+    
+    
     private void Awake()
     {
         stateMachine = gameObject.AddComponent<StateMachine>();
@@ -44,6 +46,9 @@ public class Archer : BattleAI
         startPos = transform.position;
     }
 
+    
+
+
     private class ArcherState : BaseState
     {
         protected Archer owner;
@@ -53,6 +58,8 @@ public class Archer : BattleAI
         protected float attackRange => owner.attackRange;
         protected float avoidRange => owner.avoidRange;
         protected float hp => owner.hp;
+
+        protected Animator animator => owner.animator;
         protected Transform firstTarget => owner.firstTarget;
         protected Vector2 startPos => owner.startPos;
 
@@ -60,6 +67,8 @@ public class Archer : BattleAI
         {
             this.owner = owner;
         }
+
+        
     }
 
     private class IdleState : ArcherState
@@ -68,25 +77,27 @@ public class Archer : BattleAI
 
         public override void Transition()
         {
+            
             if (Vector2.Distance(firstTarget.position, transform.position) > attackRange)
             {
                 ChangeState(State.Trace);
-                
+                animator.SetBool("Run", true);
             }
             else if (Vector2.Distance(firstTarget.position, transform.position) < avoidRange && Vector2.Distance(firstTarget.position, transform.position) < attackRange)
             {
                 ChangeState(State.Avoid);
-                
+                animator.SetBool("Run", true);
+
             }
             else if (Vector2.Distance(firstTarget.position, transform.position) <= attackRange && Vector2.Distance(firstTarget.position, transform.position) > attackRange)
             {
                 ChangeState(State.Battle);
-                
+                animator.SetBool("Battle", true);
             }
             else if (hp <= 0)
             {
                 ChangeState(State.Die);
-                
+                animator.SetBool("Die", true);
             }
         }
     }
@@ -95,29 +106,38 @@ public class Archer : BattleAI
     {
         public TraceState(Archer owner) : base(owner) { }
 
+        //public override void TakeDamage(int damage) => hp -= damage;
+
+        public override void Enter()
+        {
+            
+        }
         public override void Update()
         {
             Vector2 dir = (firstTarget.position - transform.position).normalized;
             transform.Translate(dir * moveSpeed * Time.deltaTime, Space.World);
-            
         }
-
+        
         public override void Transition()
         {
             if (Vector2.Distance(firstTarget.position, transform.position) <= attackRange && Vector2.Distance(firstTarget.position, transform.position) > avoidRange)
             {
                 ChangeState(State.Battle);
-                
+                animator.SetBool("Run", false);
+                animator.SetBool("Battle", true);
             }
             else if(Vector2.Distance(firstTarget.position, transform.position) < avoidRange)
             {
                 ChangeState(State.Avoid);
-                
+                animator.SetBool("Run", false);
+
             }
             else if (hp <= 0)
             {
                 ChangeState(State.Die);
+                animator.SetBool("Run", false);
                 
+
             }
         }
     }
@@ -130,7 +150,7 @@ public class Archer : BattleAI
             // 도망치는걸 여기다 구현
             Vector2 dir = (firstTarget.position - transform.position).normalized;
             transform.Translate(-dir * moveSpeed * Time.deltaTime, Space.World);
-            Debug.Log($"{owner.name} why avoid continue ???");
+            
         }
 
         public override void Transition()
@@ -138,17 +158,20 @@ public class Archer : BattleAI
             if (Vector2.Distance(firstTarget.position, transform.position) <= attackRange && Vector2.Distance(firstTarget.position, transform.position) >= avoidRange)
             {
                 ChangeState(State.Battle);
-                
+                animator.SetBool("Run", false);
+                animator.SetBool("Battle", true);
+
             }
             else if (Vector2.Distance(firstTarget.position, transform.position) > attackRange)
             {
                 ChangeState(State.Trace);
-                
+                animator.SetBool("Run", true);
             }
             else if (hp <= 0)
             {
                 ChangeState(State.Die);
-                
+                animator.SetBool("Run", false);
+                animator.SetBool("Die", true);
             }
         }
     }
@@ -160,6 +183,7 @@ public class Archer : BattleAI
         public override void Update()
         {
             Debug.Log("arrowattack");
+            
         }
 
         public override void Transition()
@@ -167,17 +191,22 @@ public class Archer : BattleAI
             if (Vector2.Distance(firstTarget.position, transform.position) < avoidRange)
             {
                 ChangeState(State.Avoid);
-                Debug.Log("battle to avoid");
+                animator.SetBool("Battle", false);
+                animator.SetBool("Run", true);
             }
             else if (Vector2.Distance(firstTarget.position, transform.position) > attackRange)
             {
                 ChangeState(State.Trace);
-                Debug.Log("battle to trace");
+                animator.SetBool("Battle", false);
+                animator.SetBool("Run", true);
+
             }
             else if (hp <= 0)
             {
-                ChangeState(State.Die);
-                Debug.Log("battle to avoid");
+                ChangeState(State.Die); 
+                animator.SetBool("Battle", false);
+                animator.SetBool("Die", true);
+
             }
         }
     }
@@ -197,6 +226,7 @@ public class Archer : BattleAI
             if (Vector2.Distance(startPos, transform.position) < 0.1f)
             {
                 ChangeState(State.Idle);
+
             }
         }
     }

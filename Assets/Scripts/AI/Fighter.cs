@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 
-public class Fighter : BattleAI
+public class Fighter : BattleAI, IDamagable
 {
     public enum State { Idle, Trace, Avoid, Battle, Die }
 
@@ -15,7 +15,8 @@ public class Fighter : BattleAI
     [SerializeField] float attackRange;
     [SerializeField] float avoidRange;
     [SerializeField] float hp;
-    [SerializeField] int damage;
+    [SerializeField] int deal;
+    [SerializeField] int attackCost;
 
     private StateMachine stateMachine;
     private Transform firstTarget;
@@ -33,7 +34,7 @@ public class Fighter : BattleAI
         stateMachine.AddState(State.Die, new DieState(this));
         stateMachine.InitState(State.Idle);
     }
-
+    
     private void Start()
     {
 
@@ -44,6 +45,12 @@ public class Fighter : BattleAI
         startPos = transform.position;
     }
 
+    public void TakeDamage(int damage)
+    {
+        hp -= damage;
+    }
+    
+
     private class FighterState : BaseState
     {
         protected Fighter owner;
@@ -53,8 +60,9 @@ public class Fighter : BattleAI
         protected float attackRange => owner.attackRange;
         protected float avoidRange => owner.avoidRange;
         protected float hp => owner.hp;
-        protected Transform firstTarget => owner.firstTarget;
 
+        protected Animator animator => owner.animator;
+        protected Transform firstTarget => owner.firstTarget;
         protected Transform enemyUlti => owner.enemyUlti;
         protected Vector2 startPos => owner.startPos;
 
@@ -67,6 +75,11 @@ public class Fighter : BattleAI
     private class IdleState : FighterState
     {
         public IdleState(Fighter owner) : base(owner) { }
+        
+        public override void Enter()
+        {
+           
+        }
         public override void Update()
         {
             
@@ -76,22 +89,24 @@ public class Fighter : BattleAI
             if (Vector2.Distance(firstTarget.position, transform.position) > attackRange)
             {
                 ChangeState(State.Trace);
-                
+                animator.SetBool("Run", true);
             }
             else if (Vector2.Distance(enemyUlti.position, transform.position) < avoidRange)
             {
                 ChangeState(State.Avoid);
-                
+                animator.SetBool("Run", true);
+
             }
             else if (Vector2.Distance(firstTarget.position, transform.position) <= attackRange && Vector2.Distance(enemyUlti.position, transform.position) > avoidRange)
             {
                 ChangeState(State.Battle);
-                
+                animator.SetBool("Battle", true);
+
             }
             else if (hp <= 0)
             {
                 ChangeState(State.Die);
-                
+                animator.SetBool("Die", true);
             }
         }
     }
@@ -104,7 +119,6 @@ public class Fighter : BattleAI
         {
             Vector2 dir = (firstTarget.position - transform.position).normalized;
             transform.Translate(dir * moveSpeed * Time.deltaTime, Space.World);
-            
         }
 
         public override void Transition()
@@ -112,17 +126,21 @@ public class Fighter : BattleAI
             if (Vector2.Distance(firstTarget.position, transform.position) <= attackRange && Vector2.Distance(enemyUlti.position, transform.position) > avoidRange)
             {
                 ChangeState(State.Battle);
-                
+                animator.SetBool("Run", false);
+                animator.SetBool("Battle", true);
+
             }
             else if (Vector2.Distance(enemyUlti.position, transform.position) < avoidRange)
             {
                 ChangeState(State.Avoid);
+                animator.SetBool("Run", true);
                 
             }
             else if (hp <= 0)
             {
                 ChangeState(State.Die);
-                
+                animator.SetBool("Run", false);
+                animator.SetBool("Die", true);
             }
         }
     }
@@ -145,16 +163,23 @@ public class Fighter : BattleAI
             if (Vector2.Distance(firstTarget.position, transform.position) <= attackRange && Vector2.Distance(enemyUlti.position, transform.position) > avoidRange)
             {
                 ChangeState(State.Battle);
-                
+                animator.SetBool("Run", false);
+                animator.SetBool("Battle", true);
+
+
             }
             else if (Vector2.Distance(firstTarget.position, transform.position) > attackRange && Vector2.Distance(enemyUlti.position, transform.position) > avoidRange)
             {
                 ChangeState(State.Trace);
-                
+                animator.SetBool("Run", false);
+                animator.SetBool("Die", true);
+
             }
             else if (hp <= 0)
             {
                 ChangeState(State.Die);
+                animator.SetBool("Run", false);
+                animator.SetBool("Die", true);
                 
             }
         }
@@ -174,14 +199,21 @@ public class Fighter : BattleAI
             if (Vector2.Distance(enemyUlti.position, transform.position) < avoidRange && Vector2.Distance(firstTarget.position, transform.position) < attackRange)
             {
                 ChangeState(State.Avoid);
+                animator.SetBool("Battle", false);
+                animator.SetBool("Run", true);
             }
             else if (Vector2.Distance(firstTarget.position, transform.position) > attackRange)
             {
                 ChangeState(State.Trace);
+                animator.SetBool("Battle", false);
+                animator.SetBool("Run", true);
+                
             }
             else if (hp <= 0)
             {
                 ChangeState(State.Die);
+                animator.SetBool("Battle", false);
+                animator.SetBool("Die", true);
             }
         }
     }

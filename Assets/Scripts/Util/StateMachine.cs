@@ -76,7 +76,7 @@ public class BaseState
     {
         stateMachine.ChangeState(stateName);
     }
-
+        
     protected void ChangeState<T>(T stateType) where T : Enum
     {
         ChangeState(stateType.ToString());
@@ -84,8 +84,8 @@ public class BaseState
 
     
 
-    public virtual void TakeDamage(int damage) { }
-
+ 
+    
     public virtual void Enter() { }
     public virtual void Update() { }
     public virtual void LateUpdate() { }
