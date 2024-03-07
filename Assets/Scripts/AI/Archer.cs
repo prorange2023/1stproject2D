@@ -1,6 +1,4 @@
-using System.Buffers;
-using System.Collections;
-using System.Collections.Generic;
+using System.Diagnostics;
 using UnityEngine;
 
 public class Archer : BattleAI
@@ -10,12 +8,22 @@ public class Archer : BattleAI
     [Header("Component")]
     [SerializeField] Animator animator;
 
+    [Header("Attack")]
+    [SerializeField] bool debug;
+    [SerializeField] LayerMask layerMask;
+    [SerializeField] float range;
+    [SerializeField, Range(0, 360)] float angle;
+    [SerializeField] int deal;
+    [SerializeField] int attackCost;
+    [SerializeField] float attackCooltime;
+
+
     [Header("Spec")]
     [SerializeField] float moveSpeed;
     [SerializeField] float attackRange;
     [SerializeField] float avoidRange;
     [SerializeField] float hp;
-    [SerializeField] int deal;
+    
 
     private StateMachine stateMachine;
     private Transform firstTarget;
@@ -46,7 +54,13 @@ public class Archer : BattleAI
         startPos = transform.position;
     }
 
-    
+    private void OnDrawGizmosSelected()
+    {
+        if (debug == false)
+            return;
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(transform.position, range);
+    }
 
 
     private class ArcherState : BaseState

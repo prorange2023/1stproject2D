@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 
@@ -9,14 +8,29 @@ public class Fighter : BattleAI, IDamagable
 
     [Header("Component")]
     [SerializeField] Animator animator;
+    [SerializeField] SpriteRenderer render;
+    [SerializeField] Rigidbody2D rigid;
+
+    [Header("Attack")]
+    [SerializeField] bool debug;
+    [SerializeField] LayerMask layerMask;
+    [SerializeField] float range;
+    [SerializeField, Range(0, 360)] float angle;
+    [SerializeField] int deal;
+    [SerializeField] int attackCost;
+    [SerializeField] float attackCooltime;
+
+    private float cosRange;
+
+    Collider[] colliders = new Collider[20];
+
 
     [Header("Spec")]
     [SerializeField] float moveSpeed;
     [SerializeField] float attackRange;
     [SerializeField] float avoidRange;
     [SerializeField] float hp;
-    [SerializeField] int deal;
-    [SerializeField] int attackCost;
+    
 
     private StateMachine stateMachine;
     private Transform firstTarget;
@@ -44,12 +58,32 @@ public class Fighter : BattleAI, IDamagable
         enemyUlti = GameObject.FindWithTag("EnemyUlti").transform;
         startPos = transform.position;
     }
+    public void Diretion()
+    {
 
+        float ax = transform.position.x;
+        float bx = firstTarget.position.x;
+
+        if (ax > bx)
+        {
+            render.flipX = true;
+        }
+        else if (bx > ax)
+        {
+            render.flipX = false;
+        }
+    }
     public void TakeDamage(int damage)
     {
         hp -= damage;
     }
-    
+    private void OnDrawGizmosSelected()
+    {
+        if (debug == false)
+            return;
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(transform.position, range);
+    }
 
     private class FighterState : BaseState
     {
@@ -119,6 +153,7 @@ public class Fighter : BattleAI, IDamagable
         {
             Vector2 dir = (firstTarget.position - transform.position).normalized;
             transform.Translate(dir * moveSpeed * Time.deltaTime, Space.World);
+            owner.Diretion();
         }
 
         public override void Transition()
@@ -189,9 +224,35 @@ public class Fighter : BattleAI, IDamagable
     {
         public BattleState(Fighter owner) : base(owner) { }
 
+        IEnumerator AttackCostCoroutine()
+        {
+            yield return new WaitForSeconds(owner.attackCooltime);
+            owner.attackCost = 1;
+        }
+        public void Attack()
+        {
+            if (owner.attackCost == 1)
+            {
+                owner.StopAllCoroutines();
+                int size = Physics.OverlapSphereNonAlloc(transform.position, owner.range, owner.colliders, owner.layerMask);
+                for (int i = 0; i < size; i++)
+                {
+                    Vector3 dirToTarget = (owner.colliders[i].transform.position - transform.position).normalized;
+
+                    if (Vector3.Dot(dirToTarget, transform.forward) < owner.cosRange)
+                        continue;
+
+                    IDamagable damagable = owner.colliders[i].GetComponent<IDamagable>();
+                    damagable?.TakeDamage(owner.deal);
+                }
+                owner.attackCost--;
+                owner.StartCoroutine(AttackCostCoroutine());
+            }
+        }
         public override void Update()
         {
-            Debug.Log("punch punch");
+            Attack();
+            owner.Diretion();
         }
 
         public override void Transition()
