@@ -67,11 +67,8 @@ public class Ninja : BattleAI
         startPos = transform.position;
     }
 
-    IEnumerator AttackCostCoroutine()
-    {
-        yield return new WaitForSeconds(attackCooltime);
-        attackCost = 1;
-    }
+    
+
     private class NinjaState : BaseState
     {
         protected Ninja owner;
@@ -91,6 +88,7 @@ public class Ninja : BattleAI
         public NinjaState(Ninja owner)
         {
             this.owner = owner;
+            
         }
     }
     private class IdleState : NinjaState
@@ -120,11 +118,14 @@ public class Ninja : BattleAI
                 animator.SetBool("Die", true);
             }
         }
+
+        
     }
     
     private class TraceState : NinjaState
     {
         public TraceState(Ninja owner) : base(owner) { }
+
 
         public override void Update()
         {
@@ -154,42 +155,63 @@ public class Ninja : BattleAI
     private class BattleState : NinjaState
     {
         public BattleState(Ninja owner) : base(owner) { }
-        
-        public void Attack()
+
+        IEnumerator AttackCostCoroutine()
         {
-
-            int size = Physics.OverlapSphereNonAlloc(transform.position, owner.range, owner.colliders, owner.layerMask);
-            for (int i = 0; i < size; i++)
-            {
-                Vector3 dirToTarget = (owner.colliders[i].transform.position - transform.position).normalized;
-                
-                if (Vector3.Dot(dirToTarget, transform.forward) < owner.cosRange)
-                    continue;
-
-                IDamagable damagable = owner.colliders[i].GetComponent<IDamagable>();
-                damagable?.TakeDamage(owner.deal);
-            }
+            yield return new WaitForSeconds(owner.attackCooltime);
+            owner.attackCost = 1;
         }
-        public override void Update()
+        public void Start()
         {
             
+        }
+
+        public void Attack()
+        {
+            if (owner.attackCost ==1)
+            {
+                owner.StopAllCoroutines();
+                int size = Physics.OverlapSphereNonAlloc(transform.position, owner.range, owner.colliders, owner.layerMask);
+                for (int i = 0; i < size; i++)
+                {
+                    Vector3 dirToTarget = (owner.colliders[i].transform.position - transform.position).normalized;
+
+                    if (Vector3.Dot(dirToTarget, transform.forward) < owner.cosRange)
+                        continue;
+
+                    IDamagable damagable = owner.colliders[i].GetComponent<IDamagable>();
+                    damagable?.TakeDamage(owner.deal);
+                }
+                owner.attackCost--;
+                owner.StartCoroutine(AttackCostCoroutine());
+            }
+        }
+
+
+        public override void Update()
+        {
             Attack();
             UnityEngine.Debug.Log("knife knife");
-
         }
         
         public override void Transition()
         {
-            if (Vector2.Distance(firstTarget.position, transform.position) > attackRange)
+            if (firstTarget == null)
+            {
+                ChangeState(State.Idle);
+            }
+            else if (Vector2.Distance(firstTarget.position, transform.position) > attackRange)
             {
                 ChangeState(State.Trace);
                 animator.SetBool("Battle", false);
+                //owner.StopCoroutine(owner.AttackCostCoroutine());
                 animator.SetBool("Run", true);
             }
             else if (hp <= 0)
             {
                 ChangeState(State.Die);
                 animator.SetBool("Battle", false);
+                //owner.StopCoroutine(owner.AttackCostCoroutine());
                 animator.SetBool("Die", true);
             }
         }
