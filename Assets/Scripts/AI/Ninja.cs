@@ -32,7 +32,7 @@ public class Ninja : BattleAI
     [SerializeField] float moveSpeed;
     
     [SerializeField] float avoidRange;
-    [SerializeField] float hp;
+    [SerializeField] new float hp;
 
 
     //private Vector2 moveDir;

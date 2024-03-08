@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class BattleManager : Singleton<BattleManager>
 {
-    [Header("Search")]
+    [Header("Rezen")]
     [SerializeField] bool debug;
     [SerializeField] float range;
     [SerializeField, Range(0, 360)] float angle;
@@ -14,9 +14,7 @@ public class BattleManager : Singleton<BattleManager>
     [SerializeField] List<BattleAI> blueAI = new List<BattleAI>();
     [SerializeField] List<BattleAI> redAI = new List<BattleAI>();
 
-    [Header("Information")]
-    [SerializeField] GameObject blueTeam1;
-    [SerializeField] GameObject redTeam1;
+    
 
     //blueTeam1 = blueAI[0];
     private void OnTriggerEnter2D(Collider2D other)
@@ -54,8 +52,6 @@ public class BattleManager : Singleton<BattleManager>
         }
     }
 
-    //private void Explain()
-    //{
-    //    GameObject blueteam1 = blueAI[0];
-    //}
+
+    
 }

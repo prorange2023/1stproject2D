@@ -1,6 +1,8 @@
 using System.Collections;
+using System.Threading;
 using Unity.VisualScripting;
 using UnityEngine;
+using static UnityEngine.GraphicsBuffer;
 
 public class Archer : BattleAI
 {
@@ -19,6 +21,8 @@ public class Archer : BattleAI
     [SerializeField] int deal;
     [SerializeField] int attackCost;
     [SerializeField] float attackCooltime;
+    [SerializeField] Transform arrowPoint;
+    [SerializeField] Arrow arrowPrefab;
 
     private float cosRange;
 
@@ -28,7 +32,7 @@ public class Archer : BattleAI
     [SerializeField] float moveSpeed;
     [SerializeField] float attackRange;
     [SerializeField] float avoidRange;
-    [SerializeField] float hp;
+    [SerializeField] new float hp;
     
 
     private StateMachine stateMachine;
@@ -57,7 +61,10 @@ public class Archer : BattleAI
     }
     public void FindTarget()
     {
-        // 태그 변경하는것도 만들어야되네?! 오마이갓뜨!
+        //firstTarget = redAI[0].transform;
+        // 가장 가까운 적 찾는 법
+        // 가장 먼 적 찾는 법
+        // 태그 변경하는것도 만들어야되네?! 오마이갓뜨! 안해도 될지도
         firstTarget = GameObject.FindWithTag("EnemyLongRange").transform;
         //secondTarget = GameObject.FindWithTag("EnemyShortRange").transform;
         enemyUlti = GameObject.FindWithTag("EnemyUlti").transform;
@@ -78,6 +85,7 @@ public class Archer : BattleAI
         {
             render.flipX = false;
         }
+        
     }
     private void OnDrawGizmosSelected()
     {
@@ -87,12 +95,17 @@ public class Archer : BattleAI
         Gizmos.DrawWireSphere(transform.position, range);
     }
 
+    //public void Explain()
+    //{
+    //    firstTarget = redAI[0];
+    //}
+
+    
 
     private class ArcherState : BaseState
     {
         protected Archer owner;
         protected Transform transform => owner.transform;
-
         protected float moveSpeed => owner.moveSpeed;
         protected float attackRange => owner.attackRange;
         protected float avoidRange => owner.avoidRange;
@@ -111,20 +124,19 @@ public class Archer : BattleAI
             yield return new WaitForSeconds(owner.attackCooltime);
             owner.attackCost = 1;
         }
-        public void Attack()
+        public void Attack(BattleAI battleAI)
         {
             if (owner.attackCost == 1)
             {
                 owner.StopAllCoroutines();
-                int size = Physics.OverlapSphereNonAlloc(transform.position, owner.range, owner.colliders, owner.layerMask);
-                for (int i = 0; i < size; i++)
-                {
-                    Vector3 dirToTarget = (owner.colliders[i].transform.position - transform.position).normalized;
+                Arrow arrow = Instantiate(owner.arrowPrefab, owner.arrowPoint.position, owner.arrowPoint.rotation);
+                arrow.SetTarget(battleAI);
+                arrow.SetDamage(owner.deal);
+                owner.attackCost--;
+                owner.StartCoroutine(AttackCostCoroutine());
+            }
+        }
 
-                    if (Vector3.Dot(dirToTarget, transform.forward) < owner.cosRange)
-                        continue;
-
-        
     }
 
     private class IdleState : ArcherState
@@ -252,33 +264,6 @@ public class Archer : BattleAI
     private class BattleState : ArcherState
     {
         public BattleState(Archer owner) : base(owner) { }
-
-        IEnumerator AttackCostCoroutine()
-        {
-            yield return new WaitForSeconds(owner.attackCooltime);
-            owner.attackCost = 1;
-        }
-        public void Attack()
-        {
-            if (owner.attackCost == 1)
-            {
-                owner.StopAllCoroutines();
-                int size = Physics.OverlapSphereNonAlloc(transform.position, owner.range, owner.colliders, owner.layerMask);
-                for (int i = 0; i < size; i++)
-                {
-                    Vector3 dirToTarget = (owner.colliders[i].transform.position - transform.position).normalized;
-
-                    if (Vector3.Dot(dirToTarget, transform.forward) < owner.cosRange)
-                        continue;
-
-                    IDamagable damagable = owner.colliders[i].GetComponent<IDamagable>();
-                    damagable?.TakeDamage(owner.deal);
-                }
-                owner.attackCost--;
-                owner.StartCoroutine(AttackCostCoroutine());
-            }
-        }
-
         public override void Enter()
         {
             
@@ -287,7 +272,7 @@ public class Archer : BattleAI
         {
             Debug.Log("arrowattack");
             owner.FindTarget();
-            Attack();
+            //Attack(firstTarget);
             owner.Diretion();
 
         }

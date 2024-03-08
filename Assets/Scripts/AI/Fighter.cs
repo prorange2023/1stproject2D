@@ -29,7 +29,7 @@ public class Fighter : BattleAI, IDamagable
     [SerializeField] float moveSpeed;
     [SerializeField] float attackRange;
     [SerializeField] float avoidRange;
-    [SerializeField] float hp;
+    [SerializeField] new float hp;
     
 
     private StateMachine stateMachine;
@@ -79,11 +79,11 @@ public class Fighter : BattleAI, IDamagable
             render.flipX = false;
         }
     }
-    public void TakeDamage(int damage)
-    {
-        Debug.Log("damaged");
-        hp -= damage;
-    }
+    //public void TakeDamage(int damage)
+    //{
+    //    Debug.Log("damaged");
+    //    hp -= damage;
+    //}
     private void OnDrawGizmosSelected()
     {
         if (debug == false)
