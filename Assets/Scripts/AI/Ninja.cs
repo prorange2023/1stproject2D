@@ -63,8 +63,6 @@ public class Ninja : BattleAI
         //secondTarget = GameObject.FindWithTag("EnemyShortRange").transform;
         enemyUlti = GameObject.FindWithTag("EnemyUlti").transform;
 
-        //GameObject[] Enemy = GameObject.FindGameObjectsWithTag("EnemyLongRange");
-        startPos = transform.position;
     }
     
     public void Diretion()
@@ -111,6 +109,7 @@ public class Ninja : BattleAI
             this.owner = owner;
             
         }
+    }
     }
     private class IdleState : NinjaState
     {
@@ -178,15 +177,7 @@ public class Ninja : BattleAI
     {
         public BattleState(Ninja owner) : base(owner) { }
 
-        IEnumerator AttackCostCoroutine()
-        {
-            yield return new WaitForSeconds(owner.attackCooltime);
-            owner.attackCost = 1;
-        }
-        public void Start()
-        {
             
-        }
 
         public void Attack()
         {
@@ -196,20 +187,8 @@ public class Ninja : BattleAI
                 int size = Physics.OverlapSphereNonAlloc(transform.position, owner.range, owner.colliders, owner.layerMask);
                 for (int i = 0; i < size; i++)
                 {
-                    Vector3 dirToTarget = (owner.colliders[i].transform.position - transform.position).normalized;
 
-                    if (Vector3.Dot(dirToTarget, transform.forward) < owner.cosRange)
-                        continue;
-
-                    IDamagable damagable = owner.colliders[i].GetComponent<IDamagable>();
-                    damagable?.TakeDamage(owner.deal);
-                }
-                owner.attackCost--;
-                owner.StartCoroutine(AttackCostCoroutine());
-            }
         }
-
-        
 
         public override void Update()
         {
