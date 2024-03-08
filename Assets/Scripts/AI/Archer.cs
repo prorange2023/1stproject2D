@@ -106,6 +106,23 @@ public class Archer : BattleAI
         {
             this.owner = owner;
         }
+        IEnumerator AttackCostCoroutine()
+        {
+            yield return new WaitForSeconds(owner.attackCooltime);
+            owner.attackCost = 1;
+        }
+        public void Attack()
+        {
+            if (owner.attackCost == 1)
+            {
+                owner.StopAllCoroutines();
+                int size = Physics.OverlapSphereNonAlloc(transform.position, owner.range, owner.colliders, owner.layerMask);
+                for (int i = 0; i < size; i++)
+                {
+                    Vector3 dirToTarget = (owner.colliders[i].transform.position - transform.position).normalized;
+
+                    if (Vector3.Dot(dirToTarget, transform.forward) < owner.cosRange)
+                        continue;
 
         
     }
