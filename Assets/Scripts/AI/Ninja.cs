@@ -1,10 +1,12 @@
 using System.Collections;
+using System.Collections.Generic;
+using System.Net;
 using UnityEngine;
 
 public class Ninja : BattleAI
 {
 
-    
+
     public enum State { Idle, Trace, Battle, Die }
 
     [Header("Component")]
@@ -16,26 +18,28 @@ public class Ninja : BattleAI
     [Header("Attack")]
     [SerializeField] bool debug;
     [SerializeField] LayerMask layerMask;
-    [SerializeField] float range;
+    [SerializeField] float attackRange;
     [SerializeField, Range(0, 360)] float angle;
     [SerializeField] int deal;
     [SerializeField] int attackCost;
     [SerializeField] float attackCooltime;
-
     private float cosRange;
 
-    Collider[] colliders = new Collider[20];
+    Collider2D[] atkColliders = new Collider2D[20];
 
 
     [Header("Spec")]    
     [SerializeField] float moveSpeed;
-    [SerializeField] float attackRange;
+    
     [SerializeField] float avoidRange;
     [SerializeField] float hp;
-    
+
 
     //private Vector2 moveDir;
     //private float xSpeed;
+    [Header("Manager")]
+    [SerializeField] BattleManager battleManager;
+
     private StateMachine stateMachine;
     private Transform firstTarget;
     private Transform secondTarget;
@@ -58,11 +62,7 @@ public class Ninja : BattleAI
 
     private void Start()
     {
-        // 태그 변경하는것도 만들어야되네?! 오마이갓뜨!
-        firstTarget = GameObject.FindWithTag("EnemyLongRange").transform;
-        //secondTarget = GameObject.FindWithTag("EnemyShortRange").transform;
-        enemyUlti = GameObject.FindWithTag("EnemyUlti").transform;
-
+       
     }
     
     public void Diretion()
@@ -85,8 +85,11 @@ public class Ninja : BattleAI
         if (debug == false)
             return;
         Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position, range);
+        Gizmos.DrawWireSphere(transform.position, attackRange);
     }
+
+    
+
 
     private class NinjaState : BaseState
     {
@@ -109,14 +112,55 @@ public class Ninja : BattleAI
             this.owner = owner;
             
         }
-    }
+        
+        public void FindTarget()
+        {
+            
+            // 태그 변경하는것도 만들어야되네?! 오마이갓뜨!
+            owner.firstTarget = GameObject.FindWithTag("EnemyLongRange").transform;
+            //owner.firstTarget = owner.battleManager.gameObject.GetComponent<>
+            //secondTarget = GameObject.FindWithTag("EnemyShortRange").transform;
+            owner.enemyUlti = GameObject.FindWithTag("EnemyUlti").transform;
+
+            //GameObject[] Enemy = GameObject.FindGameObjectsWithTag("EnemyLongRange");
+            owner.startPos = transform.position;
+        }
+        IEnumerator AttackCostCoroutine()
+        {
+            yield return new WaitForSeconds(owner.attackCooltime);
+            owner.attackCost = 1;
+        }
+        public void Attack()
+        {
+            if (owner.attackCost == 1)
+            {
+                owner.StopCoroutine(AttackCostCoroutine());
+                int size = Physics2D.OverlapCircleNonAlloc(transform.position, owner.attackRange, owner.atkColliders, owner.layerMask);
+                for (int i = 0; i < size; i++)
+                {
+
+                    Vector2 dirToTarget = (owner.atkColliders[i].transform.position - transform.position).normalized;
+
+                    if (Vector2.Dot(dirToTarget, transform.right) < owner.cosRange)
+                        continue;
+
+                    IDamagable damagable = owner.atkColliders[i].GetComponent<IDamagable>();
+                    damagable?.TakeDamage(owner.deal);
+                }
+                owner.attackCost--;
+                owner.StartCoroutine(AttackCostCoroutine());
+            }
+        }
+
+
     }
     private class IdleState : NinjaState
     {
+        
         public IdleState(Ninja owner) : base(owner) { }
         public override void Update()
         {
-            
+            FindTarget();
         }
         public override void Transition()
         {
@@ -152,11 +196,18 @@ public class Ninja : BattleAI
             Vector2 dir = (firstTarget.position - transform.position).normalized;
             transform.Translate(dir * moveSpeed * Time.deltaTime, Space.World);
             owner.Diretion();
+            FindTarget();
         }
 
         public override void Transition()
         {
-            if (Vector2.Distance(firstTarget.position, transform.position) <= attackRange)
+
+            if (firstTarget == null || (owner.attackCost == 0))
+            {
+                ChangeState(State.Idle);
+                animator.SetBool("Battle", false);
+            }
+            else if (Vector2.Distance(firstTarget.position, transform.position) <= attackRange)
             {
                 ChangeState(State.Battle);
                 animator.SetBool("Run", false);
@@ -177,21 +228,16 @@ public class Ninja : BattleAI
     {
         public BattleState(Ninja owner) : base(owner) { }
 
-            
 
-        public void Attack()
+
+        public void Start()
         {
-            if (owner.attackCost ==1)
-            {
-                owner.StopAllCoroutines();
-                int size = Physics.OverlapSphereNonAlloc(transform.position, owner.range, owner.colliders, owner.layerMask);
-                for (int i = 0; i < size; i++)
-                {
-
+            
         }
 
         public override void Update()
         {
+            FindTarget();
             Attack();
             owner.Diretion();
         }

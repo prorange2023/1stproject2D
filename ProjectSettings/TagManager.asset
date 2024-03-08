@@ -18,9 +18,9 @@ TagManager:
   - UI
   - Alliance
   - Enemy
-  - Ground
-  - Unit
-  - 
+  - BlueTeam
+  - RedTeam
+  - Obstacle
   - 
   - 
   - 

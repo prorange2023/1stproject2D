@@ -1,15 +1,17 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
-
-public class Fighter : BattleAI, IDamagable
+public class Test : BattleAI
 {
-    public enum State { Idle, Trace, Avoid, Battle, Die }
+
+    public enum State { Idle, Trace, Battle, Die }
 
     [Header("Component")]
     [SerializeField] Animator animator;
     [SerializeField] SpriteRenderer render;
     [SerializeField] Rigidbody2D rigid;
+
 
     [Header("Attack")]
     [SerializeField] bool debug;
@@ -22,7 +24,7 @@ public class Fighter : BattleAI, IDamagable
 
     private float cosRange;
 
-    Collider[] colliders = new Collider[20];
+    Collider[] atkColliders = new Collider[20];
 
 
     [Header("Spec")]
@@ -30,40 +32,38 @@ public class Fighter : BattleAI, IDamagable
     [SerializeField] float attackRange;
     [SerializeField] float avoidRange;
     [SerializeField] float hp;
-    
+
+
+    //private Vector2 moveDir;
+    //private float xSpeed;
+    //[Header("Manager")]
+    //[SerializeField] BattleManager battleManager;
 
     private StateMachine stateMachine;
     private Transform firstTarget;
     private Transform secondTarget;
     private Transform enemyUlti;
     private Vector2 startPos;
+    //private float preAngle;
+
 
     private void Awake()
     {
         stateMachine = gameObject.AddComponent<StateMachine>();
         stateMachine.AddState(State.Idle, new IdleState(this));
         stateMachine.AddState(State.Trace, new TraceState(this));
-        stateMachine.AddState(State.Avoid, new AvoidState(this));
+
         stateMachine.AddState(State.Battle, new BattleState(this));
         stateMachine.AddState(State.Die, new DieState(this));
         stateMachine.InitState(State.Idle);
     }
-    
+
+
     private void Start()
     {
-        FindTarget();
+
     }
 
-    public void FindTarget()
-    {
-        // 태그 변경하는것도 만들어야되네?! 오마이갓뜨!
-        firstTarget = GameObject.FindWithTag("EnemyLongRange").transform;
-        //secondTarget = GameObject.FindWithTag("EnemyShortRange").transform;
-        enemyUlti = GameObject.FindWithTag("EnemyUlti").transform;
-
-        //GameObject[] Enemy = GameObject.FindGameObjectsWithTag("EnemyLongRange");
-        startPos = transform.position;
-    }
     public void Diretion()
     {
 
@@ -79,11 +79,6 @@ public class Fighter : BattleAI, IDamagable
             render.flipX = false;
         }
     }
-    public void TakeDamage(int damage)
-    {
-        Debug.Log("damaged");
-        hp -= damage;
-    }
     private void OnDrawGizmosSelected()
     {
         if (debug == false)
@@ -92,9 +87,12 @@ public class Fighter : BattleAI, IDamagable
         Gizmos.DrawWireSphere(transform.position, range);
     }
 
-    private class FighterState : BaseState
+
+
+
+    private class TestState : BaseState
     {
-        protected Fighter owner;
+        protected Test owner;
         protected Transform transform => owner.transform;
 
         protected float moveSpeed => owner.moveSpeed;
@@ -104,26 +102,37 @@ public class Fighter : BattleAI, IDamagable
 
         protected Animator animator => owner.animator;
         protected Transform firstTarget => owner.firstTarget;
+
         protected Transform enemyUlti => owner.enemyUlti;
         protected Vector2 startPos => owner.startPos;
 
-        public FighterState(Fighter owner)
+        public TestState(Test owner)
         {
             this.owner = owner;
-        }
-    }
 
-    private class IdleState : FighterState
-    {
-        public IdleState(Fighter owner) : base(owner) { }
-        
-        public override void Enter()
-        {
-            
         }
+
+        public void FindTarget()
+        {
+            // 태그 변경하는것도 만들어야되네?! 오마이갓뜨!
+            owner.firstTarget = GameObject.FindWithTag("EnemyLongRange").transform;
+            //owner.firstTarget = owner.battleManager.gameObject.GetComponent<>
+            //secondTarget = GameObject.FindWithTag("EnemyShortRange").transform;
+            owner.enemyUlti = GameObject.FindWithTag("EnemyUlti").transform;
+
+            //GameObject[] Enemy = GameObject.FindGameObjectsWithTag("EnemyLongRange");
+            owner.startPos = transform.position;
+        }
+
+
+    }
+    private class IdleState : TestState
+    {
+
+        public IdleState(Test owner) : base(owner) { }
         public override void Update()
         {
-            owner.FindTarget();
+            FindTarget();
         }
         public override void Transition()
         {
@@ -132,13 +141,8 @@ public class Fighter : BattleAI, IDamagable
                 ChangeState(State.Trace);
                 animator.SetBool("Run", true);
             }
-            else if (Vector2.Distance(enemyUlti.position, transform.position) < avoidRange)
-            {
-                ChangeState(State.Avoid);
-                animator.SetBool("Run", true);
 
-            }
-            else if (Vector2.Distance(firstTarget.position, transform.position) <= attackRange && Vector2.Distance(enemyUlti.position, transform.position) > avoidRange)
+            else if (Vector2.Distance(firstTarget.position, transform.position) <= attackRange && owner.attackCost == 1)
             {
                 ChangeState(State.Battle);
                 animator.SetBool("Battle", true);
@@ -150,39 +154,38 @@ public class Fighter : BattleAI, IDamagable
                 animator.SetBool("Die", true);
             }
         }
+
+
     }
 
-    private class TraceState : FighterState
+    private class TraceState : TestState
     {
-        public TraceState(Fighter owner) : base(owner) { }
+        public TraceState(Test owner) : base(owner) { }
 
-        public override void Enter()
-        {
-            
-        }
+
         public override void Update()
         {
             Vector2 dir = (firstTarget.position - transform.position).normalized;
             transform.Translate(dir * moveSpeed * Time.deltaTime, Space.World);
-            owner.FindTarget();
             owner.Diretion();
+            FindTarget();
         }
 
         public override void Transition()
         {
-            if (Vector2.Distance(firstTarget.position, transform.position) <= attackRange && Vector2.Distance(enemyUlti.position, transform.position) > avoidRange)
+
+            if (firstTarget == null || (owner.attackCost == 0))
+            {
+                ChangeState(State.Idle);
+                animator.SetBool("Battle", false);
+            }
+            else if (Vector2.Distance(firstTarget.position, transform.position) <= attackRange)
             {
                 ChangeState(State.Battle);
                 animator.SetBool("Run", false);
                 animator.SetBool("Battle", true);
+            }
 
-            }
-            else if (Vector2.Distance(enemyUlti.position, transform.position) < avoidRange)
-            {
-                ChangeState(State.Avoid);
-                animator.SetBool("Run", true);
-                
-            }
             else if (hp <= 0)
             {
                 ChangeState(State.Die);
@@ -191,55 +194,11 @@ public class Fighter : BattleAI, IDamagable
             }
         }
     }
-    private class AvoidState : FighterState
+
+
+    private class BattleState : TestState
     {
-
-
-        public AvoidState(Fighter owner) : base(owner) { }
-
-        public override void Enter()
-        {
-            
-        }
-        public override void Update()
-        {
-            // 도망치는걸 여기다 구현
-            Vector2 dir = (enemyUlti.position - transform.position).normalized;
-            transform.Translate(-dir * moveSpeed * Time.deltaTime, Space.World);
-            owner.FindTarget();
-
-        }
-
-        public override void Transition()
-        {
-            if (Vector2.Distance(firstTarget.position, transform.position) <= attackRange && Vector2.Distance(enemyUlti.position, transform.position) > avoidRange)
-            {
-                ChangeState(State.Battle);
-                animator.SetBool("Run", false);
-                animator.SetBool("Battle", true);
-
-
-            }
-            else if (Vector2.Distance(firstTarget.position, transform.position) > attackRange && Vector2.Distance(enemyUlti.position, transform.position) > avoidRange)
-            {
-                ChangeState(State.Trace);
-                animator.SetBool("Run", false);
-                animator.SetBool("Die", true);
-
-            }
-            else if (hp <= 0)
-            {
-                ChangeState(State.Die);
-                animator.SetBool("Run", false);
-                animator.SetBool("Die", true);
-                
-            }
-        }
-    }
-
-    private class BattleState : FighterState
-    {
-        public BattleState(Fighter owner) : base(owner) { }
+        public BattleState(Test owner) : base(owner) { }
 
         IEnumerator AttackCostCoroutine()
         {
@@ -250,69 +209,66 @@ public class Fighter : BattleAI, IDamagable
         {
             if (owner.attackCost == 1)
             {
-                owner.StopAllCoroutines();
-                int size = Physics.OverlapSphereNonAlloc(transform.position, owner.range, owner.colliders, owner.layerMask);
+                owner.StopCoroutine(AttackCostCoroutine());
+                int size = Physics.OverlapSphereNonAlloc(transform.position, owner.range, owner.atkColliders, owner.layerMask);
                 for (int i = 0; i < size; i++)
                 {
-                    Vector3 dirToTarget = (owner.colliders[i].transform.position - transform.position).normalized;
+                    Vector3 dirToTarget = (owner.atkColliders[i].transform.position - transform.position).normalized;
 
                     if (Vector3.Dot(dirToTarget, transform.forward) < owner.cosRange)
                         continue;
 
-                    IDamagable damagable = owner.colliders[i].GetComponent<IDamagable>();
+                    IDamagable damagable = owner.atkColliders[i].GetComponent<IDamagable>();
                     damagable?.TakeDamage(owner.deal);
                 }
                 owner.attackCost--;
                 owner.StartCoroutine(AttackCostCoroutine());
             }
         }
-        public override void Enter()
+
+        public void Start()
         {
-            
+
         }
+
         public override void Update()
         {
+            FindTarget();
             Attack();
-            owner.FindTarget();
             owner.Diretion();
         }
 
         public override void Transition()
         {
-            if (Vector2.Distance(enemyUlti.position, transform.position) < avoidRange && Vector2.Distance(firstTarget.position, transform.position) < attackRange)
+            if (firstTarget == null || (owner.attackCost == 0))
             {
-                ChangeState(State.Avoid);
+                ChangeState(State.Idle);
                 animator.SetBool("Battle", false);
-                animator.SetBool("Run", true);
             }
             else if (Vector2.Distance(firstTarget.position, transform.position) > attackRange)
             {
                 ChangeState(State.Trace);
                 animator.SetBool("Battle", false);
+                //owner.StopCoroutine(owner.AttackCostCoroutine());
                 animator.SetBool("Run", true);
-                
             }
             else if (hp <= 0)
             {
                 ChangeState(State.Die);
                 animator.SetBool("Battle", false);
+                //owner.StopCoroutine(owner.AttackCostCoroutine());
                 animator.SetBool("Die", true);
             }
         }
     }
 
-    private class DieState : FighterState
+    private class DieState : TestState
     {
-        public DieState(Fighter owner) : base(owner) { }
-
-        public override void Enter()
-        {
-            
-        }
+        public DieState(Test owner) : base(owner) { }
 
         public override void Update()
         {
-
+            owner.Diretion();
         }
         //여기서 코루틴으로 부활 구현해야될것같은데 일단 나중에
         public override void Transition()
@@ -320,9 +276,7 @@ public class Fighter : BattleAI, IDamagable
             if (Vector2.Distance(startPos, transform.position) < 0.1f)
             {
                 ChangeState(State.Idle);
-                animator.SetBool("Die", false);
             }
         }
     }
 }
-

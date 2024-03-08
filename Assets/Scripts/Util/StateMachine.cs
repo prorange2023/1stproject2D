@@ -41,7 +41,7 @@ public class StateMachine : MonoBehaviour
 
     public void ChangeState(string stateName)
     {
-        Debug.Log($"{curState} -> {stateName}");
+        //Debug.Log($"{curState} -> {stateName}");
         curState.Exit();
         curState = stateDic[stateName];
         curState.Enter();
