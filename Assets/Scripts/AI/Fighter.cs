@@ -10,11 +10,12 @@ public class Fighter : BattleAI, IDamagable
     [SerializeField] Animator animator;
     [SerializeField] SpriteRenderer render;
     [SerializeField] Rigidbody2D rigid;
+    [SerializeField] BattleAI battleAI;
 
     [Header("Attack")]
     [SerializeField] bool debug;
     [SerializeField] LayerMask layerMask;
-    [SerializeField] float range;
+    [SerializeField] float attackRange;
     [SerializeField, Range(0, 360)] float angle;
     [SerializeField] int deal;
     [SerializeField] int attackCost;
@@ -27,16 +28,20 @@ public class Fighter : BattleAI, IDamagable
 
     [Header("Spec")]
     [SerializeField] float moveSpeed;
-    [SerializeField] float attackRange;
     [SerializeField] float avoidRange;
-    [SerializeField] new float hp;
-    
+    [SerializeField] float hp;
+    [SerializeField] bool isDied;
+
+    [Header("Manager")]
+    [SerializeField] BattleManager battleManager;
+
+
 
     private StateMachine stateMachine;
     private Transform firstTarget;
     private Transform secondTarget;
     private Transform enemyUlti;
-    private Vector2 startPos;
+    private Vector2 gravePos;
 
     private void Awake()
     {
@@ -47,23 +52,17 @@ public class Fighter : BattleAI, IDamagable
         stateMachine.AddState(State.Battle, new BattleState(this));
         stateMachine.AddState(State.Die, new DieState(this));
         stateMachine.InitState(State.Idle);
+
+        
+
     }
     
     private void Start()
     {
-        FindTarget();
+        this.hitPoint = hp;   
     }
 
-    public void FindTarget()
-    {
-        // 태그 변경하는것도 만들어야되네?! 오마이갓뜨!
-        firstTarget = GameObject.FindWithTag("EnemyLongRange").transform;
-        //secondTarget = GameObject.FindWithTag("EnemyShortRange").transform;
-        enemyUlti = GameObject.FindWithTag("EnemyUlti").transform;
-
-        //GameObject[] Enemy = GameObject.FindGameObjectsWithTag("EnemyLongRange");
-        startPos = transform.position;
-    }
+    
     public void Diretion()
     {
 
@@ -79,24 +78,20 @@ public class Fighter : BattleAI, IDamagable
             render.flipX = false;
         }
     }
-    //public void TakeDamage(int damage)
-    //{
-    //    Debug.Log("damaged");
-    //    hp -= damage;
-    //}
+    
     private void OnDrawGizmosSelected()
     {
         if (debug == false)
             return;
         Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position, range);
+        Gizmos.DrawWireSphere(transform.position, attackRange);
     }
 
     private class FighterState : BaseState
     {
         protected Fighter owner;
         protected Transform transform => owner.transform;
-
+        protected bool isDead => owner.isDied;
         protected float moveSpeed => owner.moveSpeed;
         protected float attackRange => owner.attackRange;
         protected float avoidRange => owner.avoidRange;
@@ -105,11 +100,22 @@ public class Fighter : BattleAI, IDamagable
         protected Animator animator => owner.animator;
         protected Transform firstTarget => owner.firstTarget;
         protected Transform enemyUlti => owner.enemyUlti;
-        protected Vector2 startPos => owner.startPos;
+        protected Vector2 gravePos => owner.gravePos;
 
         public FighterState(Fighter owner)
         {
             this.owner = owner;
+        }
+
+        public void FindTarget()
+        {
+            // 태그 변경하는것도 만들어야되네?! 오마이갓뜨!
+            owner.firstTarget = GameObject.FindWithTag("EnemyLongRange").transform;
+            //secondTarget = GameObject.FindWithTag("EnemyShortRange").transform;
+            owner.enemyUlti = GameObject.FindWithTag("EnemyUlti").transform;
+
+            //GameObject[] Enemy = GameObject.FindGameObjectsWithTag("EnemyLongRange");
+            owner.gravePos = transform.position;
         }
     }
 
@@ -123,7 +129,7 @@ public class Fighter : BattleAI, IDamagable
         }
         public override void Update()
         {
-            owner.FindTarget();
+            FindTarget();
         }
         public override void Transition()
         {
@@ -144,7 +150,7 @@ public class Fighter : BattleAI, IDamagable
                 animator.SetBool("Battle", true);
 
             }
-            else if (hp <= 0)
+            else if (owner.hitPoint <= 0)
             {
                 ChangeState(State.Die);
                 animator.SetBool("Die", true);
@@ -164,7 +170,7 @@ public class Fighter : BattleAI, IDamagable
         {
             Vector2 dir = (firstTarget.position - transform.position).normalized;
             transform.Translate(dir * moveSpeed * Time.deltaTime, Space.World);
-            owner.FindTarget();
+            FindTarget();
             owner.Diretion();
         }
 
@@ -183,7 +189,7 @@ public class Fighter : BattleAI, IDamagable
                 animator.SetBool("Run", true);
                 
             }
-            else if (hp <= 0)
+            else if (owner.hitPoint <= 0)
             {
                 ChangeState(State.Die);
                 animator.SetBool("Run", false);
@@ -206,7 +212,7 @@ public class Fighter : BattleAI, IDamagable
             // 도망치는걸 여기다 구현
             Vector2 dir = (enemyUlti.position - transform.position).normalized;
             transform.Translate(-dir * moveSpeed * Time.deltaTime, Space.World);
-            owner.FindTarget();
+            FindTarget();
 
         }
 
@@ -227,7 +233,7 @@ public class Fighter : BattleAI, IDamagable
                 animator.SetBool("Die", true);
 
             }
-            else if (hp <= 0)
+            else if (owner.hitPoint <= 0)
             {
                 ChangeState(State.Die);
                 animator.SetBool("Run", false);
@@ -251,7 +257,7 @@ public class Fighter : BattleAI, IDamagable
             if (owner.attackCost == 1)
             {
                 owner.StopAllCoroutines();
-                int size = Physics.OverlapSphereNonAlloc(transform.position, owner.range, owner.colliders, owner.layerMask);
+                int size = Physics.OverlapSphereNonAlloc(transform.position, owner.attackRange, owner.colliders, owner.layerMask);
                 for (int i = 0; i < size; i++)
                 {
                     Vector3 dirToTarget = (owner.colliders[i].transform.position - transform.position).normalized;
@@ -273,7 +279,7 @@ public class Fighter : BattleAI, IDamagable
         public override void Update()
         {
             Attack();
-            owner.FindTarget();
+            FindTarget();
             owner.Diretion();
         }
 
@@ -292,7 +298,7 @@ public class Fighter : BattleAI, IDamagable
                 animator.SetBool("Run", true);
                 
             }
-            else if (hp <= 0)
+            else if (owner.hitPoint <= 0)
             {
                 ChangeState(State.Die);
                 animator.SetBool("Battle", false);
@@ -307,7 +313,19 @@ public class Fighter : BattleAI, IDamagable
 
         public override void Enter()
         {
-            
+            Debug.Log("Enter Die");
+            if (owner.gameObject.layer == 8)
+            {
+                owner.battleManager.OnRedUnitDead();
+                owner.hitPoint = hp;
+                owner.gameObject.transform.position = new Vector3(60, 60, 0);
+            }
+            else if (owner.gameObject.layer == 9)
+            {
+                owner.battleManager.OnBlueUnitDead();
+                owner.hitPoint = hp;
+                owner.gameObject.transform.position = new Vector3(-60, 60, 0);
+            }
         }
 
         public override void Update()
@@ -317,7 +335,7 @@ public class Fighter : BattleAI, IDamagable
         //여기서 코루틴으로 부활 구현해야될것같은데 일단 나중에
         public override void Transition()
         {
-            if (Vector2.Distance(startPos, transform.position) < 0.1f)
+            if (Vector2.Distance(gravePos, transform.position) < 0.1f)
             {
                 ChangeState(State.Idle);
                 animator.SetBool("Die", false);

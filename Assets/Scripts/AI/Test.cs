@@ -31,7 +31,7 @@ public class Test : BattleAI
     [SerializeField] float moveSpeed;
     [SerializeField] float attackRange;
     [SerializeField] float avoidRange;
-    [SerializeField] new float hp;
+    [SerializeField] float hp;
 
 
     //private Vector2 moveDir;

@@ -1,19 +1,17 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Net;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 public class Ninja : BattleAI
 {
-
-
-    public enum State { Idle, Trace, Battle, Die }
+    public enum State { Idle, Trace, Avoid, Battle, Die }
 
     [Header("Component")]
     [SerializeField] Animator animator;
     [SerializeField] SpriteRenderer render;
     [SerializeField] Rigidbody2D rigid;
-
+    [SerializeField] BattleAI battleAI;
 
     [Header("Attack")]
     [SerializeField] bool debug;
@@ -23,6 +21,7 @@ public class Ninja : BattleAI
     [SerializeField] int deal;
     [SerializeField] int attackCost;
     [SerializeField] float attackCooltime;
+    
     private float cosRange;
 
     Collider2D[] atkColliders = new Collider2D[20];
@@ -30,9 +29,9 @@ public class Ninja : BattleAI
 
     [Header("Spec")]    
     [SerializeField] float moveSpeed;
-    
     [SerializeField] float avoidRange;
-    [SerializeField] new float hp;
+    [SerializeField] float hp;
+    [SerializeField] bool isDied;
 
 
     //private Vector2 moveDir;
@@ -40,11 +39,13 @@ public class Ninja : BattleAI
     [Header("Manager")]
     [SerializeField] BattleManager battleManager;
 
+
+
     private StateMachine stateMachine;
     private Transform firstTarget;
     private Transform secondTarget;
     private Transform enemyUlti;
-    private Vector2 startPos;
+    private Vector3 gravePos = new Vector3(60, 60, 0);
     //private float preAngle;
     
 
@@ -53,16 +54,18 @@ public class Ninja : BattleAI
         stateMachine = gameObject.AddComponent<StateMachine>();
         stateMachine.AddState(State.Idle, new IdleState(this));
         stateMachine.AddState(State.Trace, new TraceState(this));
-        
+        stateMachine.AddState(State.Avoid, new AvoidState(this));
         stateMachine.AddState(State.Battle, new BattleState(this));
         stateMachine.AddState(State.Die, new DieState(this));
         stateMachine.InitState(State.Idle);
+
+        
     }
     
 
     private void Start()
     {
-       
+        this.hitPoint = hp;
     }
     
     public void Diretion()
@@ -103,42 +106,59 @@ public class Ninja : BattleAI
 
         protected Animator animator => owner.animator;
         protected Transform firstTarget => owner.firstTarget;
-
         protected Transform enemyUlti => owner.enemyUlti;
-        protected Vector2 startPos => owner.startPos;
+        protected Vector2 startPos => owner.gravePos;
+        protected BattleManager battlemanager => owner.battleManager;
+
+        protected List<BattleAI> redAI => owner.battleManager.redAI;
+
+        protected List<BattleAI> blueAI => owner.battleManager.redAI;
 
         public NinjaState(Ninja owner)
         {
             this.owner = owner;
-            
         }
         
+        IEnumerator FindCoroutine()
+        {
+            while (true)
+            {
+                if (redAI.Count>0)
+                {
+                    owner.firstTarget = redAI[0].transform;
+                }
+                yield return null;
+            }
+        }
         public void FindTarget()
         {
-            
-            // 태그 변경하는것도 만들어야되네?! 오마이갓뜨!
-            owner.firstTarget = GameObject.FindWithTag("EnemyLongRange").transform;
-            //owner.firstTarget = owner.battleManager.gameObject.GetComponent<>
-            //secondTarget = GameObject.FindWithTag("EnemyShortRange").transform;
-            owner.enemyUlti = GameObject.FindWithTag("EnemyUlti").transform;
-
-            //GameObject[] Enemy = GameObject.FindGameObjectsWithTag("EnemyLongRange");
-            owner.startPos = transform.position;
+            if (redAI != null && redAI.Count > 0)
+            {
+                owner.firstTarget = redAI[0].transform;
+            }
+            else
+            {
+                owner.firstTarget = null;
+            }
+            //owner.StopCoroutine(FindCoroutine());
+            //owner.StartCoroutine(FindCoroutine());
         }
-        IEnumerator AttackCostCoroutine()
+        IEnumerator AttackCoroutine()
         {
-            yield return new WaitForSeconds(owner.attackCooltime);
-            owner.attackCost = 1;
+            while (owner.attackCost ==0)
+            {
+                yield return new WaitForSeconds(owner.attackCooltime);
+                owner.attackCost = 1;
+            }
         }
         public void Attack()
         {
-            if (owner.attackCost == 1)
+            if (owner.attackCost ==1)
             {
-                owner.StopCoroutine(AttackCostCoroutine());
+                owner.StopCoroutine(AttackCoroutine());
                 int size = Physics2D.OverlapCircleNonAlloc(transform.position, owner.attackRange, owner.atkColliders, owner.layerMask);
                 for (int i = 0; i < size; i++)
                 {
-
                     Vector2 dirToTarget = (owner.atkColliders[i].transform.position - transform.position).normalized;
 
                     if (Vector2.Dot(dirToTarget, transform.right) < owner.cosRange)
@@ -148,8 +168,10 @@ public class Ninja : BattleAI
                     damagable?.TakeDamage(owner.deal);
                 }
                 owner.attackCost--;
-                owner.StartCoroutine(AttackCostCoroutine());
+                owner.StartCoroutine(AttackCoroutine());
             }
+            
+            
         }
 
 
@@ -164,7 +186,12 @@ public class Ninja : BattleAI
         }
         public override void Transition()
         {
-            if (Vector2.Distance(firstTarget.position, transform.position) > attackRange)
+            if (firstTarget == null)
+            {
+                ChangeState(State.Idle);
+                animator.SetBool("Run", false);
+            }
+            else if (Vector2.Distance(firstTarget.position, transform.position) > attackRange)
             {
                 ChangeState(State.Trace);
                 animator.SetBool("Run", true);
@@ -206,6 +233,7 @@ public class Ninja : BattleAI
             {
                 ChangeState(State.Idle);
                 animator.SetBool("Battle", false);
+                animator.SetBool("Run", false);
             }
             else if (Vector2.Distance(firstTarget.position, transform.position) <= attackRange)
             {
@@ -222,14 +250,60 @@ public class Ninja : BattleAI
             }
         }
     }
-    
+
+    private class AvoidState : NinjaState
+    {
+
+
+        public AvoidState(Ninja owner) : base(owner) { }
+
+        public override void Enter()
+        {
+
+        }
+        public override void Update()
+        {
+            // 도망치는걸 여기다 구현
+            Vector2 dir = (enemyUlti.position - transform.position).normalized;
+            transform.Translate(-dir * moveSpeed * Time.deltaTime, Space.World);
+            FindTarget();
+
+        }
+
+        public override void Transition()
+        {
+            if (Vector2.Distance(firstTarget.position, transform.position) <= attackRange && Vector2.Distance(enemyUlti.position, transform.position) > avoidRange)
+            {
+                ChangeState(State.Battle);
+                animator.SetBool("Run", false);
+                animator.SetBool("Battle", true);
+
+
+            }
+            else if (Vector2.Distance(firstTarget.position, transform.position) > attackRange && Vector2.Distance(enemyUlti.position, transform.position) > avoidRange)
+            {
+                ChangeState(State.Trace);
+                animator.SetBool("Run", false);
+                animator.SetBool("Die", true);
+
+            }
+            else if (hp <= 0)
+            {
+                ChangeState(State.Die);
+                animator.SetBool("Run", false);
+                animator.SetBool("Die", true);
+
+            }
+        }
+    }
+
 
     private class BattleState : NinjaState
     {
         public BattleState(Ninja owner) : base(owner) { }
 
 
-
+        
         public void Start()
         {
             
@@ -270,6 +344,21 @@ public class Ninja : BattleAI
     {
         public DieState(Ninja owner) : base(owner) { }
 
+        public override void Enter()
+        {
+            if (owner.gameObject.layer == 8)
+            {
+                owner.battleManager.OnBlueUnitDead();
+                //owner.battleManager.MoveToblueGrave();
+                owner.gameObject.transform.position = new Vector3(60, 60, 0);
+            }
+            else if(owner.gameObject.layer == 9)
+            {
+                owner.battleManager.OnRedUnitDead();
+                //owner.battleManager.MoveToRedGrave();
+                owner.gameObject.transform.position = new Vector3(-60, 60, 0);
+            }
+        }
         public override void Update()
         {
             owner.Diretion();

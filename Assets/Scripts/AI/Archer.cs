@@ -32,14 +32,15 @@ public class Archer : BattleAI
     [SerializeField] float moveSpeed;
     [SerializeField] float attackRange;
     [SerializeField] float avoidRange;
-    [SerializeField] new float hp;
+    [SerializeField] float hp;
+    //[SerializeField] bool isDied;
     
 
     private StateMachine stateMachine;
     private Transform firstTarget;
     private Transform secondTarget;
     private Transform enemyUlti;
-    private Vector2 startPos;
+    private Vector2 gravePos;
 
     
     
@@ -52,26 +53,17 @@ public class Archer : BattleAI
         stateMachine.AddState(State.Battle, new BattleState(this));
         stateMachine.AddState(State.Die, new DieState(this));
         stateMachine.InitState(State.Idle);
-        //왜이래
+        
+
+
     }
 
     private void Start()
     {
+        this.hitPoint = hp;
         
     }
-    public void FindTarget()
-    {
-        //firstTarget = redAI[0].transform;
-        // 가장 가까운 적 찾는 법
-        // 가장 먼 적 찾는 법
-        // 태그 변경하는것도 만들어야되네?! 오마이갓뜨! 안해도 될지도
-        firstTarget = GameObject.FindWithTag("EnemyLongRange").transform;
-        //secondTarget = GameObject.FindWithTag("EnemyShortRange").transform;
-        enemyUlti = GameObject.FindWithTag("EnemyUlti").transform;
-
-        //GameObject[] Enemy = GameObject.FindGameObjectsWithTag("EnemyLongRange");
-        startPos = transform.position;
-    }
+    
     public void Diretion()
     {
         float ax = transform.position.x;
@@ -113,7 +105,7 @@ public class Archer : BattleAI
 
         protected Animator animator => owner.animator;
         protected Transform firstTarget => owner.firstTarget;
-        protected Vector2 startPos => owner.startPos;
+        protected Vector2 startPos => owner.gravePos;
 
         public ArcherState(Archer owner)
         {
@@ -137,6 +129,21 @@ public class Archer : BattleAI
             }
         }
 
+        public void FindTarget()
+        {
+            //owner.firstTarget = owner.redAI[0].transform;
+            // 가장 가까운 적 찾는 법
+            // 가장 먼 적 찾는 법
+            // 태그 변경하는것도 만들어야되네?! 오마이갓뜨! 안해도 될지도
+            owner.firstTarget = GameObject.FindWithTag("EnemyLongRange").transform;
+            //secondTarget = GameObject.FindWithTag("EnemyShortRange").transform;
+            owner.enemyUlti = GameObject.FindWithTag("EnemyUlti").transform;
+
+            //GameObject[] Enemy = GameObject.FindGameObjectsWithTag("EnemyLongRange");
+            owner.gravePos = transform.position;
+
+        }
+
     }
 
     private class IdleState : ArcherState
@@ -150,7 +157,7 @@ public class Archer : BattleAI
 
         public override void Update()
         {
-            owner.FindTarget();
+            FindTarget();
         }
         public override void Transition()
         {
@@ -192,7 +199,7 @@ public class Archer : BattleAI
         {
             Vector2 dir = (firstTarget.position - transform.position).normalized;
             transform.Translate(dir * moveSpeed * Time.deltaTime, Space.World);
-            owner.FindTarget();
+            FindTarget();
             owner.Diretion();
         }
         
@@ -234,7 +241,7 @@ public class Archer : BattleAI
             // 도망치는걸 여기다 구현
             Vector2 dir = (firstTarget.position - transform.position).normalized;
             transform.Translate(-dir * moveSpeed * Time.deltaTime, Space.World);
-            owner.FindTarget();
+            FindTarget();
             owner.Diretion();
         }
 
@@ -266,12 +273,12 @@ public class Archer : BattleAI
         public BattleState(Archer owner) : base(owner) { }
         public override void Enter()
         {
-            
+           
         }
         public override void Update()
         {
             Debug.Log("arrowattack");
-            owner.FindTarget();
+            FindTarget();
             //Attack(firstTarget);
             owner.Diretion();
 

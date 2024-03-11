@@ -6,7 +6,7 @@ public class StateMachine : MonoBehaviour
 {
     private Dictionary<string, BaseState> stateDic = new Dictionary<string, BaseState>();
     private BaseState curState;
-
+    
     private void Start()
     {
         curState.Enter();
@@ -82,9 +82,9 @@ public class BaseState
         ChangeState(stateType.ToString());
     }
 
-    
 
- 
+
+
     
     public virtual void Enter() { }
     public virtual void Update() { }
