@@ -12,6 +12,9 @@ public class BattleManager : Singleton<BattleManager>
     [SerializeField, Range(0, 360)] float angle;
     [SerializeField] LayerMask redTeam;
     [SerializeField] LayerMask blueTeam;
+    [SerializeField] LayerMask redUlti;
+    [SerializeField] LayerMask blueUlti;
+
     [SerializeField] LayerMask obstacleMask;
 
     public List<BattleAI> blueAI = new List<BattleAI>();
@@ -35,7 +38,7 @@ public class BattleManager : Singleton<BattleManager>
     {
         
     }
-
+   
     
 
     public void OnBlueUnitDead()

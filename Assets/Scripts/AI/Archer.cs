@@ -1,10 +1,11 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.Threading;
 using Unity.VisualScripting;
 using UnityEngine;
 using static UnityEngine.GraphicsBuffer;
 
-public class Archer : BattleAI
+public class Archer : BattleAI, IDamagable
 {
     public enum State { Idle, Trace, Avoid, Battle ,Die }
 
@@ -16,34 +17,41 @@ public class Archer : BattleAI
     [Header("Attack")]
     [SerializeField] bool debug;
     [SerializeField] LayerMask layerMask;
-    [SerializeField] float range;
+    [SerializeField] float attackRange;
     [SerializeField, Range(0, 360)] float angle;
     [SerializeField] int deal;
     [SerializeField] int attackCost;
     [SerializeField] float attackCooltime;
     [SerializeField] Transform arrowPoint;
     [SerializeField] Arrow arrowPrefab;
-
+    [SerializeField] BattleAI targetBattleAI;
     private float cosRange;
 
-    Collider[] colliders = new Collider[20];
+    Collider[] atkcolliders = new Collider[20];
 
     [Header("Spec")]
     [SerializeField] float moveSpeed;
-    [SerializeField] float attackRange;
     [SerializeField] float avoidRange;
     [SerializeField] float hp;
     //[SerializeField] bool isDied;
-    
+
+
+    //private Vector2 moveDir;
+    //private float xSpeed;
+    [Header("Manager")]
+    [SerializeField] BattleManager battleManager;
+
+
 
     private StateMachine stateMachine;
     private Transform firstTarget;
     private Transform secondTarget;
     private Transform enemyUlti;
-    private Vector2 gravePos;
+    private Vector3 gravePos = new Vector3(60, 60, 0);
+    //private float preAngle;
 
-    
-    
+
+
     private void Awake()
     {
         stateMachine = gameObject.AddComponent<StateMachine>();
@@ -53,15 +61,11 @@ public class Archer : BattleAI
         stateMachine.AddState(State.Battle, new BattleState(this));
         stateMachine.AddState(State.Die, new DieState(this));
         stateMachine.InitState(State.Idle);
-        
-
-
     }
 
     private void Start()
     {
         this.hitPoint = hp;
-        
     }
     
     public void Diretion()
@@ -84,13 +88,8 @@ public class Archer : BattleAI
         if (debug == false)
             return;
         Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position, range);
+        Gizmos.DrawWireSphere(transform.position, attackRange);
     }
-
-    //public void Explain()
-    //{
-    //    firstTarget = redAI[0];
-    //}
 
     
 
@@ -98,18 +97,82 @@ public class Archer : BattleAI
     {
         protected Archer owner;
         protected Transform transform => owner.transform;
+
         protected float moveSpeed => owner.moveSpeed;
         protected float attackRange => owner.attackRange;
         protected float avoidRange => owner.avoidRange;
-        protected float hp => owner.hp;
+        protected float hp => owner.hitPoint;
 
         protected Animator animator => owner.animator;
         protected Transform firstTarget => owner.firstTarget;
+        protected Transform enemyUlti => owner.enemyUlti;
         protected Vector2 startPos => owner.gravePos;
+        protected BattleManager battlemanager => owner.battleManager;
+        protected List<BattleAI> redAI => owner.battleManager.redAI;
+        protected List<BattleAI> blueAI => owner.battleManager.redAI;
 
         public ArcherState(Archer owner)
         {
             this.owner = owner;
+        }
+        public void FindTarget()
+        {
+            if (owner.gameObject.layer == 8)
+            {
+                if (owner.battleManager.redAI != null && owner.battleManager.redAI.Count > 0)
+                {
+                    float shortDis = Vector2.Distance(owner.gameObject.transform.position, owner.battleManager.redAI[0].transform.position);
+                    owner.firstTarget = owner.battleManager.redAI[0].transform;
+
+
+                    for (int i = 0; i < owner.battleManager.redAI.Count; i++)
+                    {
+                        BattleAI battleai = (BattleAI)owner.battleManager.redAI[i];
+                        float distance = Vector2.Distance(transform.position, battleai.transform.position);
+
+                        if (distance < shortDis)
+                        {
+                            owner.firstTarget = battleai.transform;
+                            shortDis = distance;
+                            owner.targetBattleAI = battleai;
+                        }
+                    }
+                }
+                else
+                {
+                    owner.firstTarget = null;
+                }
+
+            }
+            else if (owner.gameObject.layer == 9)
+            {
+                if (owner.battleManager.blueAI != null && owner.battleManager.blueAI.Count > 0)
+                {
+                    float shortDis = Vector2.Distance(owner.gameObject.transform.position, owner.battleManager.blueAI[0].transform.position);
+                    owner.firstTarget = owner.battleManager.blueAI[0].transform;
+
+
+                    for (int i = 0; i < owner.battleManager.blueAI.Count; i++)
+                    {
+                        BattleAI battleai = (BattleAI)owner.battleManager.blueAI[i];
+                        float distance = Vector2.Distance(transform.position, battleai.transform.position);
+
+                        if (distance < shortDis)
+                        {
+                            owner.firstTarget = battleai.transform;
+                            shortDis = distance;
+                            owner.targetBattleAI = battleai;
+                        }
+                    }
+                }
+                else
+                {
+                    owner.firstTarget = null;
+                }
+            }
+            // 3월 12일 와서 적 울티 리스트찾는거 해놔 일단 생각나는게 그거뿐이다.
+            //owner.StopCoroutine(FindCoroutine());
+            //owner.StartCoroutine(FindCoroutine());
         }
         IEnumerator AttackCostCoroutine()
         {
@@ -128,22 +191,6 @@ public class Archer : BattleAI
                 owner.StartCoroutine(AttackCostCoroutine());
             }
         }
-
-        public void FindTarget()
-        {
-            //owner.firstTarget = owner.redAI[0].transform;
-            // 가장 가까운 적 찾는 법
-            // 가장 먼 적 찾는 법
-            // 태그 변경하는것도 만들어야되네?! 오마이갓뜨! 안해도 될지도
-            owner.firstTarget = GameObject.FindWithTag("EnemyLongRange").transform;
-            //secondTarget = GameObject.FindWithTag("EnemyShortRange").transform;
-            owner.enemyUlti = GameObject.FindWithTag("EnemyUlti").transform;
-
-            //GameObject[] Enemy = GameObject.FindGameObjectsWithTag("EnemyLongRange");
-            owner.gravePos = transform.position;
-
-        }
-
     }
 
     private class IdleState : ArcherState
@@ -161,26 +208,33 @@ public class Archer : BattleAI
         }
         public override void Transition()
         {
-            
-            if (Vector2.Distance(firstTarget.position, transform.position) > attackRange)
+            if (hp <= 0)
             {
+                ChangeState(State.Die);
+                animator.SetBool("Die", true);
+            }
+            else if (firstTarget == null || owner.attackCost == 0)
+            {
+                ChangeState(State.Idle);
+                animator.SetBool("Run", false);
+            }
+            else if (Vector2.Distance(firstTarget.position, transform.position) > attackRange)
+            {
+                Debug.Log("idle to trace");
                 ChangeState(State.Trace);
                 animator.SetBool("Run", true);
             }
             else if (Vector2.Distance(firstTarget.position, transform.position) < avoidRange && Vector2.Distance(firstTarget.position, transform.position) < attackRange)
             {
+                Debug.Log("idle to Avoid");
                 ChangeState(State.Avoid);
                 animator.SetBool("Run", true);
             }
-            else if (Vector2.Distance(firstTarget.position, transform.position) <= attackRange && Vector2.Distance(firstTarget.position, transform.position) > attackRange)
+            else if (Vector2.Distance(firstTarget.position, transform.position) <= attackRange && Vector2.Distance(firstTarget.position, transform.position) > avoidRange)
             {
+                Debug.Log("idle to Battle");
                 ChangeState(State.Battle);
                 animator.SetBool("Battle", true);
-            }
-            else if (hp <= 0)
-            {
-                ChangeState(State.Die);
-                animator.SetBool("Die", true);
             }
         }
     }
@@ -199,13 +253,25 @@ public class Archer : BattleAI
         {
             Vector2 dir = (firstTarget.position - transform.position).normalized;
             transform.Translate(dir * moveSpeed * Time.deltaTime, Space.World);
-            FindTarget();
             owner.Diretion();
+            FindTarget();
         }
         
         public override void Transition()
         {
-            if (Vector2.Distance(firstTarget.position, transform.position) <= attackRange && Vector2.Distance(firstTarget.position, transform.position) > avoidRange)
+            if (hp <= 0)
+            {
+                ChangeState(State.Die);
+                animator.SetBool("Die", true);
+                animator.SetBool("Run", false);
+                animator.SetBool("Battle", false);
+            }
+            else if (firstTarget == null)
+            {
+                ChangeState(State.Idle);
+                animator.SetBool("Run", false);
+            }
+            else if (Vector2.Distance(firstTarget.position, transform.position) <= attackRange && Vector2.Distance(firstTarget.position, transform.position) > avoidRange)
             {
                 ChangeState(State.Battle);
                 animator.SetBool("Run", false);
@@ -215,15 +281,8 @@ public class Archer : BattleAI
             {
                 ChangeState(State.Avoid);
                 animator.SetBool("Run", false);
-
             }
-            else if (hp <= 0)
-            {
-                ChangeState(State.Die);
-                animator.SetBool("Run", false);
-                
-
-            }
+            
         }
     }
     private class AvoidState : ArcherState
@@ -247,18 +306,23 @@ public class Archer : BattleAI
 
         public override void Transition()
         {
-            if (Vector2.Distance(firstTarget.position, transform.position) <= attackRange && Vector2.Distance(firstTarget.position, transform.position) >= avoidRange)
+            if (firstTarget == null)
             {
-                ChangeState(State.Battle);
+                ChangeState(State.Idle);
                 animator.SetBool("Run", false);
-                animator.SetBool("Battle", true);
-
             }
             else if (Vector2.Distance(firstTarget.position, transform.position) > attackRange)
             {
                 ChangeState(State.Trace);
                 animator.SetBool("Run", true);
             }
+            else if (owner.attackCost == 1 || Vector2.Distance(firstTarget.position, transform.position) > avoidRange)
+            {
+                ChangeState(State.Battle);
+                animator.SetBool("Run", false);
+                animator.SetBool("Battle", true);
+            }
+            
             else if (hp <= 0)
             {
                 ChangeState(State.Die);
@@ -290,6 +354,7 @@ public class Archer : BattleAI
             {
                 ChangeState(State.Idle);
                 animator.SetBool("Battle", false);
+                animator.SetBool("Run", false);
             }
             else if (Vector2.Distance(firstTarget.position, transform.position) < avoidRange)
             {
@@ -320,11 +385,22 @@ public class Archer : BattleAI
 
         public override void Enter()
         {
-            owner.gameObject.tag = "EnemyShortRange";
+            if (owner.gameObject.layer == 8)
+            {
+                owner.battleManager.OnBlueUnitDead();
+                //owner.battleManager.MoveToblueGrave();
+                owner.gameObject.transform.position = new Vector3(60, 60, 0);
+            }
+            else if (owner.gameObject.layer == 9)
+            {
+                owner.battleManager.OnRedUnitDead();
+                //owner.battleManager.MoveToRedGrave();
+                owner.gameObject.transform.position = new Vector3(-60, 60, 0);
+            }
         }
         public override void Update()
         {
-            
+            owner.Diretion();
         }
         
         //여기서 코루틴으로 부활 구현해야될것같은데 일단 나중에
@@ -334,7 +410,6 @@ public class Archer : BattleAI
             {
                 ChangeState(State.Idle);
                 animator.SetBool("Die", false);
-
             }
         }
     }

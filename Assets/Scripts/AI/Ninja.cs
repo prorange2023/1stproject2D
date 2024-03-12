@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-public class Ninja : BattleAI
+public class Ninja : BattleAI, IDamagable
 {
     public enum State { Idle, Trace, Avoid, Battle, Die }
 
@@ -11,7 +11,6 @@ public class Ninja : BattleAI
     [SerializeField] Animator animator;
     [SerializeField] SpriteRenderer render;
     [SerializeField] Rigidbody2D rigid;
-    [SerializeField] BattleAI battleAI;
 
     [Header("Attack")]
     [SerializeField] bool debug;
@@ -21,13 +20,14 @@ public class Ninja : BattleAI
     [SerializeField] int deal;
     [SerializeField] int attackCost;
     [SerializeField] float attackCooltime;
-    
+    [SerializeField] BattleAI targetBattleAI;
+
     private float cosRange;
 
     Collider2D[] atkColliders = new Collider2D[20];
 
 
-    [Header("Spec")]    
+    [Header("Spec")]
     [SerializeField] float moveSpeed;
     [SerializeField] float avoidRange;
     [SerializeField] float hp;
@@ -47,7 +47,7 @@ public class Ninja : BattleAI
     private Transform enemyUlti;
     private Vector3 gravePos = new Vector3(60, 60, 0);
     //private float preAngle;
-    
+
 
     private void Awake()
     {
@@ -59,21 +59,21 @@ public class Ninja : BattleAI
         stateMachine.AddState(State.Die, new DieState(this));
         stateMachine.InitState(State.Idle);
 
-        
+
     }
-    
+
 
     private void Start()
     {
         this.hitPoint = hp;
     }
-    
+
     public void Diretion()
     {
-        
+
         float ax = transform.position.x;
         float bx = firstTarget.position.x;
-        
+
         if (ax > bx)
         {
             render.flipX = true;
@@ -91,7 +91,7 @@ public class Ninja : BattleAI
         Gizmos.DrawWireSphere(transform.position, attackRange);
     }
 
-    
+
 
 
     private class NinjaState : BaseState
@@ -102,7 +102,7 @@ public class Ninja : BattleAI
         protected float moveSpeed => owner.moveSpeed;
         protected float attackRange => owner.attackRange;
         protected float avoidRange => owner.avoidRange;
-        protected float hp => owner.hp;
+        protected float hp => owner.hitPoint;
 
         protected Animator animator => owner.animator;
         protected Transform firstTarget => owner.firstTarget;
@@ -118,34 +118,67 @@ public class Ninja : BattleAI
         {
             this.owner = owner;
         }
-        
-        IEnumerator FindCoroutine()
-        {
-            while (true)
-            {
-                if (redAI.Count>0)
-                {
-                    owner.firstTarget = redAI[0].transform;
-                }
-                yield return null;
-            }
-        }
         public void FindTarget()
         {
-            if (redAI != null && redAI.Count > 0)
+            if (owner.gameObject.layer == 8)
             {
-                owner.firstTarget = redAI[0].transform;
+                if (owner.battleManager.redAI != null && owner.battleManager.redAI.Count > 0)
+                {
+                    float shortDis = Vector2.Distance(owner.gameObject.transform.position, owner.battleManager.redAI[0].transform.position);
+                    owner.firstTarget = owner.battleManager.redAI[0].transform;
+
+                    for (int i = 0; i < owner.battleManager.redAI.Count; i++)
+                    {
+                        BattleAI battleai = (BattleAI)owner.battleManager.redAI[i];
+                        float distance = Vector2.Distance(transform.position, battleai.transform.position);
+
+                        if (distance < shortDis)
+                        {
+                            owner.firstTarget = battleai.transform;
+                            shortDis = distance;
+                            owner.targetBattleAI = battleai;
+                        }
+                    }
+                }
+                else
+                {
+                    owner.firstTarget = null;
+                }
+
             }
-            else
+            else if (owner.gameObject.layer == 9)
             {
-                owner.firstTarget = null;
+                if (owner.battleManager.blueAI != null && owner.battleManager.blueAI.Count > 0)
+                {
+                    float shortDis = Vector2.Distance(owner.gameObject.transform.position, owner.battleManager.blueAI[0].transform.position);
+                    owner.firstTarget = owner.battleManager.blueAI[0].transform;
+
+                    for (int i = 0; i < owner.battleManager.blueAI.Count; i++)
+                    {
+                        BattleAI battleai = (BattleAI)owner.battleManager.blueAI[i];
+                        float distance = Vector2.Distance(transform.position, battleai.transform.position);
+
+                        if (distance < shortDis)
+                        {
+                            owner.firstTarget = battleai.transform;
+                            shortDis = distance;
+                            owner.targetBattleAI = battleai;
+                        }
+                    }
+                }
+                else
+                {
+                    owner.firstTarget = null;
+                }
+
             }
+            // 3월 12일 와서 적 울티 리스트찾는거 해놔 일단 생각나는게 그거뿐이다.
             //owner.StopCoroutine(FindCoroutine());
             //owner.StartCoroutine(FindCoroutine());
         }
         IEnumerator AttackCoroutine()
         {
-            while (owner.attackCost ==0)
+            while (owner.attackCost == 0)
             {
                 yield return new WaitForSeconds(owner.attackCooltime);
                 owner.attackCost = 1;
@@ -153,7 +186,7 @@ public class Ninja : BattleAI
         }
         public void Attack()
         {
-            if (owner.attackCost ==1)
+            if (owner.attackCost == 1)
             {
                 owner.StopCoroutine(AttackCoroutine());
                 int size = Physics2D.OverlapCircleNonAlloc(transform.position, owner.attackRange, owner.atkColliders, owner.layerMask);
@@ -170,15 +203,13 @@ public class Ninja : BattleAI
                 owner.attackCost--;
                 owner.StartCoroutine(AttackCoroutine());
             }
-            
-            
+
+
         }
-
-
     }
     private class IdleState : NinjaState
     {
-        
+
         public IdleState(Ninja owner) : base(owner) { }
         public override void Update()
         {
@@ -186,7 +217,14 @@ public class Ninja : BattleAI
         }
         public override void Transition()
         {
-            if (firstTarget == null)
+            if (hp <= 0)
+            {
+                ChangeState(State.Die);
+                animator.SetBool("Die", true);
+                animator.SetBool("Run", false);
+                animator.SetBool("Battle", false);
+            }
+            else if (firstTarget == null)
             {
                 ChangeState(State.Idle);
                 animator.SetBool("Run", false);
@@ -196,23 +234,18 @@ public class Ninja : BattleAI
                 ChangeState(State.Trace);
                 animator.SetBool("Run", true);
             }
-            
+
             else if (Vector2.Distance(firstTarget.position, transform.position) <= attackRange && owner.attackCost == 1)
             {
                 ChangeState(State.Battle);
                 animator.SetBool("Battle", true);
 
             }
-            else if (hp <= 0)
-            {
-                ChangeState(State.Die);
-                animator.SetBool("Die", true);
-            }
         }
 
-        
+
     }
-    
+
     private class TraceState : NinjaState
     {
         public TraceState(Ninja owner) : base(owner) { }
@@ -228,8 +261,14 @@ public class Ninja : BattleAI
 
         public override void Transition()
         {
-
-            if (firstTarget == null || (owner.attackCost == 0))
+            if (hp <= 0)
+            {
+                ChangeState(State.Die);
+                animator.SetBool("Run", false);
+                animator.SetBool("Battle", false);
+                animator.SetBool("Die", true);
+            }
+            else if (firstTarget == null || (owner.attackCost == 0))
             {
                 ChangeState(State.Idle);
                 animator.SetBool("Battle", false);
@@ -240,13 +279,6 @@ public class Ninja : BattleAI
                 ChangeState(State.Battle);
                 animator.SetBool("Run", false);
                 animator.SetBool("Battle", true);
-            }
-            
-            else if (hp <= 0)
-            {
-                ChangeState(State.Die);
-                animator.SetBool("Run", false);
-                animator.SetBool("Die", true);
             }
         }
     }
@@ -266,33 +298,35 @@ public class Ninja : BattleAI
             // 도망치는걸 여기다 구현
             Vector2 dir = (enemyUlti.position - transform.position).normalized;
             transform.Translate(-dir * moveSpeed * Time.deltaTime, Space.World);
+            Attack();
             FindTarget();
 
         }
 
         public override void Transition()
         {
-            if (Vector2.Distance(firstTarget.position, transform.position) <= attackRange && Vector2.Distance(enemyUlti.position, transform.position) > avoidRange)
+            if (hp <= 0)
+            {
+                ChangeState(State.Die);
+                animator.SetBool("Run", false);
+                animator.SetBool("Die", true);
+            }
+            else if (firstTarget == null)
+            {
+                ChangeState(State.Idle);
+                animator.SetBool("Run", false);
+            }
+            else if (Vector2.Distance(firstTarget.position, transform.position) <= attackRange && Vector2.Distance(enemyUlti.position, transform.position) > avoidRange)
             {
                 ChangeState(State.Battle);
                 animator.SetBool("Run", false);
                 animator.SetBool("Battle", true);
-
-
             }
             else if (Vector2.Distance(firstTarget.position, transform.position) > attackRange && Vector2.Distance(enemyUlti.position, transform.position) > avoidRange)
             {
                 ChangeState(State.Trace);
                 animator.SetBool("Run", false);
                 animator.SetBool("Die", true);
-
-            }
-            else if (hp <= 0)
-            {
-                ChangeState(State.Die);
-                animator.SetBool("Run", false);
-                animator.SetBool("Die", true);
-
             }
         }
     }
@@ -303,10 +337,10 @@ public class Ninja : BattleAI
         public BattleState(Ninja owner) : base(owner) { }
 
 
-        
+
         public void Start()
         {
-            
+
         }
 
         public override void Update()
@@ -315,13 +349,23 @@ public class Ninja : BattleAI
             Attack();
             owner.Diretion();
         }
-        
+
         public override void Transition()
         {
-            if (firstTarget == null || (owner.attackCost == 0))
+            if (hp <= 0)
+            {
+
+                ChangeState(State.Die);
+                animator.SetBool("Battle", false);
+                animator.SetBool("Run", false);
+                //owner.StopCoroutine(owner.AttackCostCoroutine());
+                animator.SetBool("Die", true);
+            }
+            else if (firstTarget == null || (owner.attackCost == 0))
             {
                 ChangeState(State.Idle);
                 animator.SetBool("Battle", false);
+                animator.SetBool("Run", false);
             }
             else if (Vector2.Distance(firstTarget.position, transform.position) > attackRange)
             {
@@ -330,13 +374,7 @@ public class Ninja : BattleAI
                 //owner.StopCoroutine(owner.AttackCostCoroutine());
                 animator.SetBool("Run", true);
             }
-            else if (hp <= 0)
-            {
-                ChangeState(State.Die);
-                animator.SetBool("Battle", false);
-                //owner.StopCoroutine(owner.AttackCostCoroutine());
-                animator.SetBool("Die", true);
-            }
+
         }
     }
 
@@ -352,7 +390,7 @@ public class Ninja : BattleAI
                 //owner.battleManager.MoveToblueGrave();
                 owner.gameObject.transform.position = new Vector3(60, 60, 0);
             }
-            else if(owner.gameObject.layer == 9)
+            else if (owner.gameObject.layer == 9)
             {
                 owner.battleManager.OnRedUnitDead();
                 //owner.battleManager.MoveToRedGrave();
