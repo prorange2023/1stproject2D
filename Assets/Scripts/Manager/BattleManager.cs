@@ -35,7 +35,7 @@ public class BattleManager : Singleton<BattleManager>
     public int BluePoint/*프로퍼티*/{ set { bluePoint = value; OnredDied?.Invoke(value); } get { return bluePoint; } }
 
     // blue layer == 8
-    public int RedPoint/*프로퍼티*/{ set { bluePoint = value; OnblueDied?.Invoke(value); } get { return redPoint; } }
+    public int RedPoint/*프로퍼티*/{ set { redPoint = value; OnblueDied?.Invoke(value); } get { return redPoint; } }
     // red layer == 9
     private void Start()
     {
@@ -79,13 +79,13 @@ public class BattleManager : Singleton<BattleManager>
         {
             Debug.Log("will move");
             yield return new WaitForSeconds(RezenTime);
-            gameObject.transform.position = new Vector3(-12.9f, 5.74f, 0);
+            gameobject.gameObject.transform.position = new Vector3(-12.9f, 5.74f, 0);
         }
         else if (gameobject.gameObject.layer == 9)
         {
             Debug.Log("will move");
             yield return new WaitForSeconds(RezenTime);
-            gameObject.transform.position = new Vector3(12.9f, -5.74f, 0);
+            gameobject.gameObject.transform.position = new Vector3(12.9f, -5.74f, 0);
         }
     }
 

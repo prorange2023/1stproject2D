@@ -74,11 +74,13 @@ public class Fighter : BattleAI, IDamagable
         {
             this.enemyList = Manager.Battle.redAI;
             layerMask = 512;
+            gravePos = new Vector3(-12.9f, 5.74f, 0);
         }
         else if (gameObject.layer == 9)
         {
             this.enemyList = Manager.Battle.blueAI;
             layerMask = 256;
+            gravePos = new Vector3(12.9f, -5.74f, 0);
         }
     }
     public void Diretion()
@@ -90,6 +92,7 @@ public class Fighter : BattleAI, IDamagable
         if (ax > bx)
         {
             render.flipX = true;
+            gameObject.transform.rotation = Quaternion.identity;
         }
         else if (bx > ax)
         {

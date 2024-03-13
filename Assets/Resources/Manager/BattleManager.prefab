@@ -69,7 +69,7 @@ MonoBehaviour:
   redPoint: 0
   redGrave: []
   blueGrave: []
-  RezenTime: 5
+  RezenTime: 3
 --- !u!61 &8612580280063366095
 BoxCollider2D:
   m_ObjectHideFlags: 0
