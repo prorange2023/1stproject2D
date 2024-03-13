@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.UIElements;
 using static UnityEngine.GraphicsBuffer;
 
 public class Archer : BattleAI, IDamagable
@@ -22,9 +23,10 @@ public class Archer : BattleAI, IDamagable
     [SerializeField] int deal;
     [SerializeField] int attackCost;
     [SerializeField] float attackCooltime;
-    [SerializeField] Transform arrowPoint;
+    [SerializeField] Transform firePoint;
     [SerializeField] Arrow arrowPrefab;
     [SerializeField] BattleAI targetBattleAI;
+    [SerializeField] bool Attacking;
     private float cosRange;
 
     Collider[] atkcolliders = new Collider[20];
@@ -33,6 +35,7 @@ public class Archer : BattleAI, IDamagable
     [SerializeField] float moveSpeed;
     [SerializeField] float avoidRange;
     [SerializeField] float hp;
+    [SerializeField] float impactTime;
     //[SerializeField] bool isDied;
 
 
@@ -48,6 +51,8 @@ public class Archer : BattleAI, IDamagable
     private Transform secondTarget;
     private Transform enemyUlti;
     private Vector3 gravePos = new Vector3(60, 60, 0);
+    private List<BattleAI> enemyList;
+    private float atktime;
     //private float preAngle;
 
 
@@ -66,8 +71,21 @@ public class Archer : BattleAI, IDamagable
     private void Start()
     {
         this.hitPoint = hp;
+        ListChoice();
+        this.atktime = animator.GetCurrentAnimatorStateInfo(0).length;
     }
     
+    public void ListChoice()
+    {
+        if(gameObject.layer == 8)
+        {
+            this.enemyList = battleManager.redAI;
+        }
+        else if (gameObject.layer == 9)
+        {
+            this.enemyList = battleManager.blueAI;
+        }
+    }
     public void Diretion()
     {
         float ax = transform.position.x;
@@ -117,65 +135,40 @@ public class Archer : BattleAI, IDamagable
         }
         public void FindTarget()
         {
-            if (owner.gameObject.layer == 8)
+            
+            if (owner.enemyList != null && owner.enemyList.Count > 0)
             {
-                if (owner.battleManager.redAI != null && owner.battleManager.redAI.Count > 0)
+                float shortDis = Vector2.Distance(owner.gameObject.transform.position, owner.enemyList[0].transform.position);
+                owner.firstTarget = owner.enemyList[0].transform;
+
+                for (int i = 0; i < owner.enemyList.Count; i++)
                 {
-                    float shortDis = Vector2.Distance(owner.gameObject.transform.position, owner.battleManager.redAI[0].transform.position);
-                    owner.firstTarget = owner.battleManager.redAI[0].transform;
+                    BattleAI battleai = (BattleAI)owner.enemyList[i];
+                    float distance = Vector2.Distance(transform.position, battleai.transform.position);
 
-
-                    for (int i = 0; i < owner.battleManager.redAI.Count; i++)
+                    if (distance < shortDis)
                     {
-                        BattleAI battleai = (BattleAI)owner.battleManager.redAI[i];
-                        float distance = Vector2.Distance(transform.position, battleai.transform.position);
-
-                        if (distance < shortDis)
-                        {
-                            owner.firstTarget = battleai.transform;
-                            shortDis = distance;
-                            owner.targetBattleAI = battleai;
-                        }
+                        owner.firstTarget = battleai.transform;
+                        shortDis = distance;
+                        owner.targetBattleAI = battleai;
                     }
                 }
-                else
-                {
-                    owner.firstTarget = null;
-                }
-
             }
-            else if (owner.gameObject.layer == 9)
+            else
             {
-                if (owner.battleManager.blueAI != null && owner.battleManager.blueAI.Count > 0)
-                {
-                    float shortDis = Vector2.Distance(owner.gameObject.transform.position, owner.battleManager.blueAI[0].transform.position);
-                    owner.firstTarget = owner.battleManager.blueAI[0].transform;
-
-
-                    for (int i = 0; i < owner.battleManager.blueAI.Count; i++)
-                    {
-                        BattleAI battleai = (BattleAI)owner.battleManager.blueAI[i];
-                        float distance = Vector2.Distance(transform.position, battleai.transform.position);
-
-                        if (distance < shortDis)
-                        {
-                            owner.firstTarget = battleai.transform;
-                            shortDis = distance;
-                            owner.targetBattleAI = battleai;
-                        }
-                    }
-                }
-                else
-                {
-                    owner.firstTarget = null;
-                }
+                owner.firstTarget = null;
+                owner.targetBattleAI = null;
             }
-            // 3월 12일 와서 적 울티 리스트찾는거 해놔 일단 생각나는게 그거뿐이다.
-            //owner.StopCoroutine(FindCoroutine());
-            //owner.StartCoroutine(FindCoroutine());
         }
+        // 3월 12일 와서 적 울티 리스트찾는거 해놔 일단 생각나는게 그거뿐이다.
+        //owner.StopCoroutine(FindCoroutine());
+        //owner.StartCoroutine(FindCoroutine());
+        
         IEnumerator AttackCostCoroutine()
         {
+            yield return new WaitForSeconds(owner.attackCooltime - owner.atktime);
+            animator.SetBool("Battle", false);
+            animator.SetBool("Idle", true);
             yield return new WaitForSeconds(owner.attackCooltime);
             owner.attackCost = 1;
         }
@@ -183,12 +176,36 @@ public class Archer : BattleAI, IDamagable
         {
             if (owner.attackCost == 1)
             {
-                owner.StopAllCoroutines();
-                Arrow arrow = Instantiate(owner.arrowPrefab, owner.arrowPoint.position, owner.arrowPoint.rotation);
-                arrow.SetTarget(battleAI);
-                arrow.SetDamage(owner.deal);
+                owner.StopCoroutine(AttackCostCoroutine());
+                //Instantiate(owner.arrowPrefab, owner.firePoint.transform);
+                //owner.arrowPrefab.SetTarget(owner.targetBattleAI);
+                //owner.arrowPrefab.SetDamage(owner.deal);
                 owner.attackCost--;
                 owner.StartCoroutine(AttackCostCoroutine());
+            }
+        }
+        IEnumerator AttackMotionCoRoutine()
+        {       
+            yield return new WaitForSeconds(owner.atktime);
+        }
+        public void AtkMotionRoutine()
+        {
+            owner.StopCoroutine(AttackMotionCoRoutine());
+        }
+        public void AniCheck()
+        {
+            if (owner.animator.GetCurrentAnimatorStateInfo(0).IsName("ArcherAttack") == true)
+            {
+                
+                float animTime = animator.GetCurrentAnimatorStateInfo(0).normalizedTime;
+                if (animTime >= 1.0f)
+                {
+                    owner.Attacking = false;
+                }
+                else
+                {
+                    owner.Attacking = true;
+                }
             }
         }
     }
@@ -212,19 +229,21 @@ public class Archer : BattleAI, IDamagable
             {
                 ChangeState(State.Die);
                 animator.SetBool("Die", true);
+                animator.SetBool("Idle", false);
             }
             else if (firstTarget == null || owner.attackCost == 0)
             {
                 ChangeState(State.Idle);
                 animator.SetBool("Run", false);
+                animator.SetBool("Idle", false);
             }
             else if (Vector2.Distance(firstTarget.position, transform.position) > attackRange)
             {
-                Debug.Log("idle to trace");
                 ChangeState(State.Trace);
                 animator.SetBool("Run", true);
+                animator.SetBool("Idle", false);
             }
-            else if (Vector2.Distance(firstTarget.position, transform.position) < avoidRange && Vector2.Distance(firstTarget.position, transform.position) < attackRange)
+            else if (Vector2.Distance(firstTarget.position, transform.position) < avoidRange && owner.attackCost == 0)
             {
                 Debug.Log("idle to Avoid");
                 ChangeState(State.Avoid);
@@ -235,6 +254,7 @@ public class Archer : BattleAI, IDamagable
                 Debug.Log("idle to Battle");
                 ChangeState(State.Battle);
                 animator.SetBool("Battle", true);
+                animator.SetBool("Idle", false);
             }
         }
     }
@@ -270,6 +290,7 @@ public class Archer : BattleAI, IDamagable
             {
                 ChangeState(State.Idle);
                 animator.SetBool("Run", false);
+                animator.SetBool("Idle", true);
             }
             else if (Vector2.Distance(firstTarget.position, transform.position) <= attackRange && Vector2.Distance(firstTarget.position, transform.position) > avoidRange)
             {
@@ -302,80 +323,91 @@ public class Archer : BattleAI, IDamagable
             transform.Translate(-dir * moveSpeed * Time.deltaTime, Space.World);
             FindTarget();
             owner.Diretion();
+            // 회피 도중의 공격을 어디다 해야할까....
         }
 
         public override void Transition()
         {
-            if (firstTarget == null)
+
+            if (hp <= 0)
+            {
+                ChangeState(State.Die);
+                animator.SetBool("Run", false);
+                animator.SetBool("Die", true);
+            }
+            else if (firstTarget == null)
             {
                 ChangeState(State.Idle);
                 animator.SetBool("Run", false);
+            }
+            else if (owner.attackCost == 1)
+            {
+                Debug.Log("avoid to battle");
+                ChangeState(State.Battle);
+                animator.SetBool("Run", false);
+                animator.SetBool("Battle", true);
             }
             else if (Vector2.Distance(firstTarget.position, transform.position) > attackRange)
             {
                 ChangeState(State.Trace);
                 animator.SetBool("Run", true);
             }
-            else if (owner.attackCost == 1 || Vector2.Distance(firstTarget.position, transform.position) > avoidRange)
-            {
-                ChangeState(State.Battle);
-                animator.SetBool("Run", false);
-                animator.SetBool("Battle", true);
-            }
             
-            else if (hp <= 0)
-            {
-                ChangeState(State.Die);
-                animator.SetBool("Run", false);
-                animator.SetBool("Die", true);
-            }
         }
     }
 
     private class BattleState : ArcherState
     {
         public BattleState(Archer owner) : base(owner) { }
+
+        
         public override void Enter()
         {
-           
+            
         }
         public override void Update()
         {
-            Debug.Log("arrowattack");
+            
             FindTarget();
-            //Attack(firstTarget);
+            Attack(owner.targetBattleAI);
+            AniCheck();
             owner.Diretion();
-
+            
         }
 
         public override void Transition()
         {
-            if (firstTarget == null || (owner.attackCost == 0))
+            if (hp <= 0)
+            {
+                ChangeState(State.Die);
+                animator.SetBool("Battle", false);
+                animator.SetBool("Die", true);
+                Debug.Log("Battle to Die ");
+            }
+            else if (owner.targetBattleAI == null || owner.attackCost == 0)
             {
                 ChangeState(State.Idle);
                 animator.SetBool("Battle", false);
                 animator.SetBool("Run", false);
+                animator.SetBool("Idle", true);
+                Debug.Log("Battle to idle");
             }
-            else if (Vector2.Distance(firstTarget.position, transform.position) < avoidRange)
+            else if (owner.Attacking == false && Vector2.Distance(firstTarget.position, transform.position) < avoidRange)
             {
                 ChangeState(State.Avoid);
                 animator.SetBool("Battle", false);
                 animator.SetBool("Run", true);
+                Debug.Log("Battle to avoid");
             }
             else if (Vector2.Distance(firstTarget.position, transform.position) > attackRange)
             {
                 ChangeState(State.Trace);
                 animator.SetBool("Battle", false);
                 animator.SetBool("Run", true);
-
+                Debug.Log("Battle to trace ");
+                //제발 좀 되라
             }
-            else if (hp <= 0)
-            {
-                ChangeState(State.Die); 
-                animator.SetBool("Battle", false);
-                animator.SetBool("Die", true);
-
-            }
+            
         }
     }
     

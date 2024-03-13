@@ -15,7 +15,7 @@ public class Fighter : BattleAI, IDamagable
 
     [Header("Attack")]
     [SerializeField] bool debug;
-    [SerializeField] LayerMask layerMask;
+    [SerializeField] LayerMask layerMask = 0;
     [SerializeField] float attackRange;
     [SerializeField, Range(0, 360)] float angle;
     [SerializeField] int deal;
@@ -37,8 +37,6 @@ public class Fighter : BattleAI, IDamagable
 
     //private Vector2 moveDir;
     //private float xSpeed;
-    [Header("Manager")]
-    [SerializeField] BattleManager battleManager;
 
 
 
@@ -47,6 +45,7 @@ public class Fighter : BattleAI, IDamagable
     private Transform secondTarget;
     private Transform enemyUlti;
     private Vector3 gravePos = new Vector3(60, 60, 0);
+    private List<BattleAI> enemyList;
     //private float preAngle;
 
 
@@ -67,8 +66,21 @@ public class Fighter : BattleAI, IDamagable
     private void Start()
     {
         this.hitPoint = hp;
+        ListChoice();
     }
-
+    public void ListChoice()
+    {
+        if (gameObject.layer == 8)
+        {
+            this.enemyList = Manager.Battle.redAI;
+            layerMask = 512;
+        }
+        else if (gameObject.layer == 9)
+        {
+            this.enemyList = Manager.Battle.blueAI;
+            layerMask = 256;
+        }
+    }
     public void Diretion()
     {
 
@@ -109,69 +121,35 @@ public class Fighter : BattleAI, IDamagable
         protected Transform firstTarget => owner.firstTarget;
         protected Transform enemyUlti => owner.enemyUlti;
         protected Vector2 startPos => owner.gravePos;
-        protected BattleManager battlemanager => owner.battleManager;
-
-        protected List<BattleAI> redAI => owner.battleManager.redAI;
-
-        protected List<BattleAI> blueAI => owner.battleManager.redAI;
-
+        protected List<BattleAI> redAI => Manager.Battle.redAI;
+        protected List<BattleAI> blueAI => Manager.Battle.redAI;
         public FighterState(Fighter owner)
         {
             this.owner = owner;
         }
         public void FindTarget()
         {
-            if (owner.gameObject.layer == 8)
+            if (owner.enemyList != null && owner.enemyList.Count > 0)
             {
-                if (owner.battleManager.redAI != null && owner.battleManager.redAI.Count > 0)
+                float shortDis = Vector2.Distance(owner.gameObject.transform.position, owner.enemyList[0].transform.position);
+                owner.firstTarget = owner.enemyList[0].transform;
+
+                for (int i = 0; i < owner.enemyList.Count; i++)
                 {
-                    float shortDis = Vector2.Distance(owner.gameObject.transform.position, owner.battleManager.redAI[0].transform.position);
-                    owner.firstTarget = owner.battleManager.redAI[0].transform;
+                    BattleAI battleai = (BattleAI)owner.enemyList[i];
+                    float distance = Vector2.Distance(transform.position, battleai.transform.position);
 
-                    for (int i = 0; i < owner.battleManager.redAI.Count; i++)
+                    if (distance < shortDis)
                     {
-                        BattleAI battleai = (BattleAI)owner.battleManager.redAI[i];
-                        float distance = Vector2.Distance(transform.position, battleai.transform.position);
-
-                        if (distance < shortDis)
-                        {
-                            owner.firstTarget = battleai.transform;
-                            shortDis = distance;
-                            owner.targetBattleAI = battleai;
-                        }
+                        owner.firstTarget = battleai.transform;
+                        shortDis = distance;
+                        owner.targetBattleAI = battleai;
                     }
                 }
-                else
-                {
-                    owner.firstTarget = null;
-                }
-                
             }
-            else if (owner.gameObject.layer == 9)
+            else
             {
-                if (owner.battleManager.blueAI != null && owner.battleManager.blueAI.Count > 0)
-                {
-                    float shortDis = Vector2.Distance(owner.gameObject.transform.position, owner.battleManager.blueAI[0].transform.position);
-                    owner.firstTarget = owner.battleManager.blueAI[0].transform;
-
-                    for (int i = 0; i < owner.battleManager.blueAI.Count; i++)
-                    {
-                        BattleAI battleai = (BattleAI)owner.battleManager.blueAI[i];
-                        float distance = Vector2.Distance(transform.position, battleai.transform.position);
-
-                        if (distance < shortDis)
-                        {
-                            owner.firstTarget = battleai.transform;
-                            shortDis = distance;
-                            owner.targetBattleAI = battleai;
-                        }
-                    }
-                }
-                else
-                {
-                    owner.firstTarget = null;
-                }
-                
+                owner.firstTarget = null;
             }
             // 3월 12일 와서 적 울티 리스트찾는거 해놔 일단 생각나는게 그거뿐이다.
             //owner.StopCoroutine(FindCoroutine());
@@ -387,15 +365,17 @@ public class Fighter : BattleAI, IDamagable
         {
             if (owner.gameObject.layer == 8)
             {
-                owner.battleManager.OnBlueUnitDead();
-                //owner.battleManager.MoveToblueGrave();
+                Manager.Battle.RedPoint++;
+                Manager.Battle.MoveToblueGrave(owner.gameObject);
                 owner.gameObject.transform.position = new Vector3(60, 60, 0);
+                owner.hitPoint = owner.hp;
             }
             else if (owner.gameObject.layer == 9)
             {
-                owner.battleManager.OnRedUnitDead();
-                //owner.battleManager.MoveToRedGrave();
+                Manager.Battle.BluePoint++;
+                Manager.Battle.MoveToRedGrave(owner.gameObject);
                 owner.gameObject.transform.position = new Vector3(-60, 60, 0);
+                owner.hitPoint = owner.hp;
             }
         }
         public override void Update()

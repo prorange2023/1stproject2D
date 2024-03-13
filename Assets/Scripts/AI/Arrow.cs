@@ -37,6 +37,7 @@ public class Arrow : MonoBehaviour
         }
 
         transform.position = endPoint;
+        Destroy(gameObject);
         yield return null;
 
         //if (target != null)

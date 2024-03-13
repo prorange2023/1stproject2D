@@ -3,6 +3,7 @@ using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class BattleManager : Singleton<BattleManager>
 {
@@ -14,20 +15,27 @@ public class BattleManager : Singleton<BattleManager>
     [SerializeField] LayerMask blueTeam;
     [SerializeField] LayerMask redUlti;
     [SerializeField] LayerMask blueUlti;
-
     [SerializeField] LayerMask obstacleMask;
 
     public List<BattleAI> blueAI = new List<BattleAI>();
     public List<BattleAI> redAI = new List<BattleAI>();
+
+    public UnityAction<int>/*액션*/ OnblueDied;
+    public UnityAction<int>/*액션*/ OnredDied;
+
+    [SerializeField] int bluePoint;
+    [SerializeField] int redPoint;
+
 
     public List<BattleAI> redGrave = new List<BattleAI>();
     public List<BattleAI> blueGrave = new List<BattleAI>();
 
     [SerializeField] float RezenTime;
     
-    int bluePoint;
+    public int BluePoint/*프로퍼티*/{ set { bluePoint = value; OnredDied?.Invoke(value); } get { return bluePoint; } }
+
     // blue layer == 8
-    int redPoint;
+    public int RedPoint/*프로퍼티*/{ set { bluePoint = value; OnblueDied?.Invoke(value); } get { return redPoint; } }
     // red layer == 9
     private void Start()
     {
@@ -43,35 +51,43 @@ public class BattleManager : Singleton<BattleManager>
 
     public void OnBlueUnitDead()
     {
-        bluePoint++;
+        redPoint++;
         Debug.Log(bluePoint);
     }
     public void OnRedUnitDead()
     {
-        redPoint++;
+        bluePoint++;
         Debug.Log(redPoint);
     }
-    public void MoveToRedGrave(BattleAI battleAI)
+    public void MoveToRedGrave(GameObject gameobject)
     {
         
+        StartCoroutine(RezenTimer(gameobject));
         Debug.Log("move to Redgrave");
     }
+    
 
-    public void MoveToblueGrave()
-    {
-        Debug.Log("move to bluegrave");
-        StartCoroutine(RezenTimer());
+    public void MoveToblueGrave(GameObject gameobject)
+    {   
+        StartCoroutine(RezenTimer(gameobject));
+        Debug.Log("move to Redgrave");
     }
-
-    Coroutine rezen;
-    IEnumerator RezenTimer()
+    IEnumerator RezenTimer(GameObject gameobject)
     {
-        
-        yield return new WaitForSeconds(RezenTime);
-        gameObject.SetActive(true);
+        Debug.Log("will rezen");
+        if (gameobject.gameObject.layer == 8)
+        {
+            Debug.Log("will move");
+            yield return new WaitForSeconds(RezenTime);
+            gameObject.transform.position = new Vector3(-12.9f, 5.74f, 0);
+        }
+        else if (gameobject.gameObject.layer == 9)
+        {
+            Debug.Log("will move");
+            yield return new WaitForSeconds(RezenTime);
+            gameObject.transform.position = new Vector3(12.9f, -5.74f, 0);
+        }
     }
-
-
 
     //blueTeam1 = blueAI[0];
     public void OnTriggerEnter2D(Collider2D other)
@@ -103,6 +119,4 @@ public class BattleManager : Singleton<BattleManager>
         }
     }
 
-
-    
 }
