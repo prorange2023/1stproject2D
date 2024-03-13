@@ -193,6 +193,18 @@ public class Fighter : BattleAI, IDamagable
     {
 
         public IdleState(Fighter owner) : base(owner) { }
+
+        public override void Enter()
+        {
+            if (owner.gameObject.layer == 8)
+            {
+                Manager.Battle.StopRezen(owner.gameObject);
+            }
+            else if (owner.gameObject.layer == 9)
+            {
+                Manager.Battle.StopRezen(owner.gameObject);
+            }
+        }
         public override void Update()
         {
             FindTarget();

@@ -93,6 +93,7 @@ public class Ninja : BattleAI, IDamagable
         {
             render.flipX = true;
             gameObject.transform.rotation = Quaternion.identity;
+            //gameObject.transform.rotation = new Vector3(0, 180, 0);
         }
         else if (bx > ax)
         {
@@ -195,6 +196,17 @@ public class Ninja : BattleAI, IDamagable
     {
 
         public IdleState(Ninja owner) : base(owner) { }
+        public override void Enter()
+        {
+            if (owner.gameObject.layer == 8)
+            {
+                Manager.Battle.StopRezen(owner.gameObject);
+            }
+            else if (owner.gameObject.layer == 9)
+            {
+                Manager.Battle.StopRezen(owner.gameObject);
+            }
+        }
         public override void Update()
         {
             FindTarget();
@@ -391,10 +403,6 @@ public class Ninja : BattleAI, IDamagable
         public override void Transition()
         {
             if (Vector2.Distance(gravePos, transform.position) < 0.1f)
-            {
-                ChangeState(State.Idle);
-            }
-            else if (Vector2.Distance(gravePos, transform.position) < 0.1f)
             {
                 ChangeState(State.Idle);
             }

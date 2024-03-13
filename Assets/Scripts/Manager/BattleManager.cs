@@ -59,33 +59,33 @@ public class BattleManager : Singleton<BattleManager>
         bluePoint++;
         Debug.Log(redPoint);
     }
-    public void MoveToRedGrave(GameObject gameobject)
+    public void MoveToRedGrave(GameObject battleai)
     {
-        
-        StartCoroutine(RezenTimer(gameobject));
-        Debug.Log("move to Redgrave");
+        StartCoroutine(RezenTimer(battleai));
     }
-    
+    public void StopRezen(GameObject battleai)
+    {
+        StopCoroutine(RezenTimer(battleai));
+    }
 
-    public void MoveToblueGrave(GameObject gameobject)
+    public void MoveToblueGrave(GameObject battleai)
     {   
-        StartCoroutine(RezenTimer(gameobject));
-        Debug.Log("move to Redgrave");
+        StartCoroutine(RezenTimer(battleai));
     }
-    IEnumerator RezenTimer(GameObject gameobject)
+    IEnumerator RezenTimer(GameObject battleai)
     {
         Debug.Log("will rezen");
-        if (gameobject.gameObject.layer == 8)
+        if (battleai.gameObject.layer == 8)
         {
             Debug.Log("will move");
             yield return new WaitForSeconds(RezenTime);
-            gameobject.gameObject.transform.position = new Vector3(-12.9f, 5.74f, 0);
+            battleai.gameObject.transform.position = new Vector3(-12.9f, 5.74f, 0);
         }
-        else if (gameobject.gameObject.layer == 9)
+        else if (battleai.gameObject.layer == 9)
         {
             Debug.Log("will move");
             yield return new WaitForSeconds(RezenTime);
-            gameobject.gameObject.transform.position = new Vector3(12.9f, -5.74f, 0);
+            battleai.gameObject.transform.position = new Vector3(12.9f, -5.74f, 0);
         }
     }
 
