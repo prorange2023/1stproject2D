@@ -30,6 +30,7 @@ public class BattleManager : Singleton<BattleManager>
     [SerializeField] int redPoint;
     [SerializeField] float battleTime;
     [SerializeField] float RezenTime;
+    
 
     public List<BattleAI> redGrave = new List<BattleAI>();
     public List<BattleAI> blueGrave = new List<BattleAI>();
@@ -55,15 +56,27 @@ public class BattleManager : Singleton<BattleManager>
     
     public void BattleEnd()
     {
-        if ( AllAI != null)
-        {
-            for (int i = 0; i < AllAI.Count; i++)
-            {
-                AllAI[i].layer = 8;
-            }
-        }
+        //if (BattleTime <=0)
+        //{
+        //    Manager.UI.ShowPopUpUI(pauseUIPrefab);
+        //}
+
+
+
+        //if ( AllAI != null)
+        //{
+        //    for (int i = 0; i < AllAI.Count; i++)
+        //    {
+        //        AllAI[i].layer = 8;
+        //    }
+        //}
+        //위 수식은 왜 작동안하는지는 나중에 확인하자
     }
-    //위 수식은 왜 작동안하는지는 나중에 확인하자
+    
+    public void BattleSceneEnd()
+    {
+
+    }
     public void OnBlueUnitDead()
     {
         redPoint++;

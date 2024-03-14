@@ -7,6 +7,7 @@ public class Timer : MonoBehaviour
 {
     [SerializeField] TMP_Text text;
     [SerializeField] float extratime;
+    [SerializeField] PopUpUI pauseUIPrefab;
 
     private void OnEnable()
     {
@@ -17,6 +18,7 @@ public class Timer : MonoBehaviour
     {
         //Manager.Battle.BattleEnd(); 왜 작동 안하는지는 나중에...
         Manager.Battle.OntimeChanged -= UpdateView;
+        Manager.UI.ShowPopUpUI(pauseUIPrefab);
     }
     private void Update()
     {
@@ -24,11 +26,12 @@ public class Timer : MonoBehaviour
         {
             Manager.Battle.BattleTime -= Time.deltaTime;
         }
-        else if(Manager.Battle.BattleTime < 1)
+        else if(Manager.Battle.BattleTime <= 0)
         {
-            Manager.Battle.BattleTime = 0;
+            Manager.Battle.BattleTime = 0.0f;
         }
     }
+    
     private void UpdateView(float value)
     {
         int minutes = Mathf.FloorToInt(Manager.Battle.BattleTime / 60);

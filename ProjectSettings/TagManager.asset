@@ -7,8 +7,6 @@ TagManager:
   - Unit
   - Ground
   - EnemyUlti
-  - EnemyLongRange
-  - EnemyShortRange
   layers:
   - Default
   - TransparentFX
@@ -21,7 +19,7 @@ TagManager:
   - BlueTeam
   - RedTeam
   - Obstacle
-  - 
+  - UI
   - 
   - 
   - 
@@ -54,4 +52,7 @@ TagManager:
     locked: 0
   - name: Unit
     uniqueID: 3664927651
+    locked: 0
+  - name: UI
+    uniqueID: 1614638621
     locked: 0
