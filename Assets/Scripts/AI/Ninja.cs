@@ -6,12 +6,13 @@ using UnityEngine.UIElements;
 
 public class Ninja : BattleAI, IDamagable
 {
-    public enum State { Idle, Trace, Avoid, Battle, Die }
+    public enum State { Idle, Trace, Avoid, Battle, Die, Gameover }
 
     [Header("Component")]
     [SerializeField] Animator animator;
     [SerializeField] SpriteRenderer render;
     [SerializeField] Rigidbody2D rigid;
+    [SerializeField] GameObject self;
 
     [Header("Attack")]
     [SerializeField] bool debug;
@@ -57,6 +58,7 @@ public class Ninja : BattleAI, IDamagable
         stateMachine.AddState(State.Avoid, new AvoidState(this));
         stateMachine.AddState(State.Battle, new BattleState(this));
         stateMachine.AddState(State.Die, new DieState(this));
+        stateMachine.AddState(State.Gameover, new GameoverState(this));
         stateMachine.InitState(State.Idle);
 
 
@@ -134,7 +136,6 @@ public class Ninja : BattleAI, IDamagable
         }
         public void FindTarget()
         {
-            
             if (owner.enemyList != null && owner.enemyList.Count > 0)
             {
                 float shortDis = Vector2.Distance(owner.gameObject.transform.position, owner.enemyList[0].transform.position);
@@ -156,6 +157,7 @@ public class Ninja : BattleAI, IDamagable
             else
             {
                 owner.firstTarget = null;
+                owner.targetBattleAI = null;
             }
             // 3월 12일 와서 적 울티 리스트찾는거 해놔 일단 생각나는게 그거뿐이다.
             //owner.StopCoroutine(FindCoroutine());
@@ -213,7 +215,15 @@ public class Ninja : BattleAI, IDamagable
         }
         public override void Transition()
         {
-            if (hp <= 0)
+            if (Manager.Battle.BattleTime <= 0)
+            {
+                ChangeState(State.Gameover);
+                animator.SetBool("Battle", false);
+                animator.SetBool("Run", false);
+                //owner.StopCoroutine(owner.AttackCostCoroutine());
+                animator.SetBool("Die", false);
+            }
+            else if(hp <= 0)
             {
                 ChangeState(State.Die);
                 animator.SetBool("Die", true);
@@ -257,7 +267,15 @@ public class Ninja : BattleAI, IDamagable
 
         public override void Transition()
         {
-            if (hp <= 0)
+            if (Manager.Battle.BattleTime <= 0)
+            {
+                ChangeState(State.Gameover);
+                animator.SetBool("Battle", false);
+                animator.SetBool("Run", false);
+                //owner.StopCoroutine(owner.AttackCostCoroutine());
+                animator.SetBool("Die", false);
+            }
+            else if(hp <= 0)
             {
                 ChangeState(State.Die);
                 animator.SetBool("Run", false);
@@ -301,7 +319,15 @@ public class Ninja : BattleAI, IDamagable
 
         public override void Transition()
         {
-            if (hp <= 0)
+            if (Manager.Battle.BattleTime <= 0)
+            {
+                ChangeState(State.Gameover);
+                animator.SetBool("Battle", false);
+                animator.SetBool("Run", false);
+                //owner.StopCoroutine(owner.AttackCostCoroutine());
+                animator.SetBool("Die", false);
+            }
+            else if(hp <= 0)
             {
                 ChangeState(State.Die);
                 animator.SetBool("Run", false);
@@ -348,9 +374,16 @@ public class Ninja : BattleAI, IDamagable
 
         public override void Transition()
         {
-            if (hp <= 0)
+            if (Manager.Battle.BattleTime <= 0)
             {
-
+                ChangeState(State.Gameover);
+                animator.SetBool("Battle", false);
+                animator.SetBool("Run", false);
+                //owner.StopCoroutine(owner.AttackCostCoroutine());
+                animator.SetBool("Die", false);
+            }
+            else if (hp <= 0)
+            {
                 ChangeState(State.Die);
                 animator.SetBool("Battle", false);
                 animator.SetBool("Run", false);
@@ -407,5 +440,12 @@ public class Ninja : BattleAI, IDamagable
                 ChangeState(State.Idle);
             }
         }
+    }
+
+    private class GameoverState : NinjaState
+    {
+        public GameoverState(Ninja owner) : base(owner) { }
+
+
     }
 }

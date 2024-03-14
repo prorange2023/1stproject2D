@@ -19,24 +19,29 @@ public class BattleManager : Singleton<BattleManager>
 
     public List<BattleAI> blueAI = new List<BattleAI>();
     public List<BattleAI> redAI = new List<BattleAI>();
+    public List<GameObject> AllAI = new List<GameObject>();
 
     public UnityAction<int>/*액션*/ OnblueDied;
     public UnityAction<int>/*액션*/ OnredDied;
+    public UnityAction<float> OntimeChanged;
 
+    [Header("Judgement")]
     [SerializeField] int bluePoint;
     [SerializeField] int redPoint;
-
+    [SerializeField] float battleTime;
+    [SerializeField] float RezenTime;
 
     public List<BattleAI> redGrave = new List<BattleAI>();
     public List<BattleAI> blueGrave = new List<BattleAI>();
 
-    [SerializeField] float RezenTime;
     
-    public int BluePoint/*프로퍼티*/{ set { bluePoint = value; OnredDied?.Invoke(value); } get { return bluePoint; } }
 
+    public int BluePoint/*프로퍼티*/{ set { bluePoint = value; OnredDied?.Invoke(value); } get { return bluePoint; } }
     // blue layer == 8
     public int RedPoint/*프로퍼티*/{ set { redPoint = value; OnblueDied?.Invoke(value); } get { return redPoint; } }
     // red layer == 9
+    public float BattleTime { set { battleTime = value; OntimeChanged?.Invoke(value); } get { return battleTime; } }
+
     private void Start()
     {
         
@@ -48,7 +53,17 @@ public class BattleManager : Singleton<BattleManager>
     }
    
     
-
+    public void BattleEnd()
+    {
+        if ( AllAI != null)
+        {
+            for (int i = 0; i < AllAI.Count; i++)
+            {
+                AllAI[i].layer = 8;
+            }
+        }
+    }
+    //위 수식은 왜 작동안하는지는 나중에 확인하자
     public void OnBlueUnitDead()
     {
         redPoint++;
@@ -104,6 +119,11 @@ public class BattleManager : Singleton<BattleManager>
             BattleAI battleAI = other.gameObject.GetComponent<BattleAI>();
             redAI.Add(battleAI);
         }
+        if (((1 << other.gameObject.layer) & redTeam) != 0)
+        {
+            GameObject gameibjectAI = other.gameObject.GetComponent<GameObject>();
+            AllAI.Add(gameibjectAI);
+        }
     }
     private void OnTriggerExit2D(Collider2D other)
     {
@@ -116,6 +136,11 @@ public class BattleManager : Singleton<BattleManager>
         {
             BattleAI battleAI = other.gameObject.GetComponent<BattleAI>();
             redAI.Remove(battleAI);
+        }
+        if (((1 << other.gameObject.layer) & redTeam) != 0)
+        {
+            GameObject gameibjectAI = other.gameObject.GetComponent<GameObject>();
+            AllAI.Remove(gameibjectAI);
         }
     }
 

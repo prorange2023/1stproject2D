@@ -40,11 +40,11 @@ public class Arrow : MonoBehaviour
         Destroy(gameObject);
         yield return null;
 
-        //if (target != null)
-        //{
-        //    target?.TakeDamage(deal);
-        //}
-        //Destroy(gameObject);
+        if (target != null)
+        {
+            target?.TakeDamage(deal);
+        }
+        Destroy(gameObject);
     }
 
     public void SetDamage(int damage)

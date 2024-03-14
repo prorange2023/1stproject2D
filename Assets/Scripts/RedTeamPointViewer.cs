@@ -6,13 +6,12 @@ using UnityEngine;
 public class RedTeamPointViewer : MonoBehaviour
 {
     public TMP_Text text;
-    public BattleManager battleManager;
 
     private void OnEnable()
     {
-        UpdateView(battleManager.RedPoint);
+        UpdateView(Manager.Battle.RedPoint);
         Manager.Battle.OnblueDied += UpdateView;
-        Debug.Log(battleManager.RedPoint);
+        Debug.Log(Manager.Battle.RedPoint);
     }
     private void OnDisable()
     {

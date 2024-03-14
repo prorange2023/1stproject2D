@@ -6,12 +6,13 @@ using UnityEngine;
 
 public class Fighter : BattleAI, IDamagable
 {
-    public enum State { Idle, Trace, Avoid, Battle, Die }
+    public enum State { Idle, Trace, Avoid, Battle, Die, Gameover }
 
     [Header("Component")]
     [SerializeField] Animator animator;
     [SerializeField] SpriteRenderer render;
     [SerializeField] Rigidbody2D rigid;
+    [SerializeField] GameObject self;
 
     [Header("Attack")]
     [SerializeField] bool debug;
@@ -57,6 +58,7 @@ public class Fighter : BattleAI, IDamagable
         stateMachine.AddState(State.Avoid, new AvoidState(this));
         stateMachine.AddState(State.Battle, new BattleState(this));
         stateMachine.AddState(State.Die, new DieState(this));
+        stateMachine.AddState(State.Gameover, new GameoverState(this));
         stateMachine.InitState(State.Idle);
 
 
@@ -153,6 +155,7 @@ public class Fighter : BattleAI, IDamagable
             else
             {
                 owner.firstTarget = null;
+                owner.targetBattleAI = null;
             }
             // 3월 12일 와서 적 울티 리스트찾는거 해놔 일단 생각나는게 그거뿐이다.
             //owner.StopCoroutine(FindCoroutine());
@@ -211,7 +214,15 @@ public class Fighter : BattleAI, IDamagable
         }
         public override void Transition()
         {
-            if (hp <= 0)
+            if (Manager.Battle.BattleTime <= 0)
+            {
+                ChangeState(State.Gameover);
+                animator.SetBool("Battle", false);
+                animator.SetBool("Run", false);
+                //owner.StopCoroutine(owner.AttackCostCoroutine());
+                animator.SetBool("Die", false);
+            }
+            else if(hp <= 0)
             {
                 ChangeState(State.Die);
                 animator.SetBool("Die", true);
@@ -255,7 +266,15 @@ public class Fighter : BattleAI, IDamagable
 
         public override void Transition()
         {
-            if (hp <= 0)
+            if (Manager.Battle.BattleTime <= 0)
+            {
+                ChangeState(State.Gameover);
+                animator.SetBool("Battle", false);
+                animator.SetBool("Run", false);
+                //owner.StopCoroutine(owner.AttackCostCoroutine());
+                animator.SetBool("Die", false);
+            }
+            else if(hp <= 0)
             {
                 ChangeState(State.Die);
                 animator.SetBool("Run", false);
@@ -299,7 +318,15 @@ public class Fighter : BattleAI, IDamagable
 
         public override void Transition()
         {
-            if (hp <= 0)
+            if (Manager.Battle.BattleTime <= 0)
+            {
+                ChangeState(State.Gameover);
+                animator.SetBool("Battle", false);
+                animator.SetBool("Run", false);
+                //owner.StopCoroutine(owner.AttackCostCoroutine());
+                animator.SetBool("Die", false);
+            }
+            else if(hp <= 0)
             {
                 ChangeState(State.Die);
                 animator.SetBool("Run", false);
@@ -346,7 +373,15 @@ public class Fighter : BattleAI, IDamagable
 
         public override void Transition()
         {
-            if (hp <= 0)
+            if (Manager.Battle.BattleTime <= 0)
+            {
+                ChangeState(State.Gameover);
+                animator.SetBool("Battle", false);
+                animator.SetBool("Run", false);
+                //owner.StopCoroutine(owner.AttackCostCoroutine());
+                animator.SetBool("Die", false);
+            }
+            else if(hp <= 0)
             {
                 
                 ChangeState(State.Die);
@@ -405,6 +440,13 @@ public class Fighter : BattleAI, IDamagable
                 ChangeState(State.Idle);
             }
         }
+    }
+
+    private class GameoverState : FighterState
+    {
+        public GameoverState(Fighter owner) : base(owner) { }
+
+
     }
 }
 

@@ -65,11 +65,13 @@ MonoBehaviour:
     m_Bits: 0
   blueAI: []
   redAI: []
+  AllAI: []
   bluePoint: 0
   redPoint: 0
+  battleTime: 10
+  RezenTime: 3
   redGrave: []
   blueGrave: []
-  RezenTime: 3
 --- !u!61 &8612580280063366095
 BoxCollider2D:
   m_ObjectHideFlags: 0

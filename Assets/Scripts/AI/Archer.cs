@@ -14,6 +14,7 @@ public class Archer : BattleAI, IDamagable
     [SerializeField] Animator animator;
     [SerializeField] SpriteRenderer render;
     [SerializeField] Rigidbody2D rigid;
+    [SerializeField] GameObject self;
 
     [Header("Attack")]
     [SerializeField] bool debug;
