@@ -7,6 +7,7 @@ public class TitleScene : BaseScene
 {
     [SerializeField] Button NewGameButton;
     [SerializeField] Button LoadGameButton;
+    [SerializeField] Button OptionButton;
     [SerializeField] SettingUI settingUIPrefab;
     [SerializeField] Button ExitGameButton;
     private void Start()
@@ -45,8 +46,8 @@ public class TitleScene : BaseScene
     }
     public void GameSceneLoad()
     {
-        Debug.Log("æ¿ ¿Ãµø");
-        Manager.Scene.LoadScene("GameScene");
+        //Debug.Log("æ¿ ¿Ãµø");
+        //Manager.Scene.LoadScene("GameScene");
     }
 
     

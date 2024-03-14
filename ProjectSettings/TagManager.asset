@@ -19,7 +19,7 @@ TagManager:
   - BlueTeam
   - RedTeam
   - Obstacle
-  - UI
+  - 
   - 
   - 
   - 
@@ -49,6 +49,15 @@ TagManager:
     locked: 0
   - name: Default
     uniqueID: 0
+    locked: 0
+  - name: BanPickUnit
+    uniqueID: 576223955
+    locked: 0
+  - name: BlueUnit
+    uniqueID: 4287486893
+    locked: 0
+  - name: RedUnit
+    uniqueID: 2999909365
     locked: 0
   - name: Unit
     uniqueID: 3664927651

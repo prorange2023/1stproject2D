@@ -1,10 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class SettingUI : PopUpUI
+public class MainUI : PopUpUI
 {
     //[SerializeField] ShotCutUI ShotCutUIPrefab;
     protected override void Awake()
@@ -15,9 +14,13 @@ public class SettingUI : PopUpUI
         GetUI<Button>("BackButton").onClick.AddListener(Close);
     }
 
-
+    public void NewGame()
+    {
+        Manager.Data.NewData();
+        Manager.Scene.LoadScene("BattleScene");
+    }
     public void ShotCut()
     {
-      //Manager.UI.ShowPopUpUI(ShotCutUIPrefab);
+        //Manager.UI.ShowPopUpUI(ShotCutUIPrefab);
     }
 }
