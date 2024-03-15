@@ -24,13 +24,16 @@ public class BattleManager : Singleton<BattleManager>
     public UnityAction<int>/*액션*/ OnblueDied;
     public UnityAction<int>/*액션*/ OnredDied;
     public UnityAction<float> OntimeChanged;
+    public UnityAction<bool> OnTimeEnded;
 
     [Header("Judgement")]
     [SerializeField] int bluePoint;
     [SerializeField] int redPoint;
     [SerializeField] float battleTime;
     [SerializeField] float RezenTime;
-    [SerializeField] GameObject endButton;    
+    [SerializeField] GameObject winButton;
+    
+    
 
     public List<BattleAI> redGrave = new List<BattleAI>();
     public List<BattleAI> blueGrave = new List<BattleAI>();
@@ -56,6 +59,7 @@ public class BattleManager : Singleton<BattleManager>
     
     public void BattleEnd()
     {
+        
         //if (BattleTime <=0)
         //{
         //    Manager.UI.ShowPopUpUI(pauseUIPrefab);
@@ -73,10 +77,7 @@ public class BattleManager : Singleton<BattleManager>
         //위 수식은 왜 작동안하는지는 나중에 확인하자
     }
     
-    public void BattleSceneEnd()
-    {
-        endButton.SetActive(true);
-    }
+    
     public void OnBlueUnitDead()
     {
         redPoint++;

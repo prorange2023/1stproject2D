@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
+using UnityEngine.Events;
 
 public class Timer : MonoBehaviour
 {
@@ -10,6 +11,7 @@ public class Timer : MonoBehaviour
     [SerializeField] float extratime;
     [SerializeField] GameObject battleEnd;
 
+    public UnityAction<int>/*액션*/ OnTi;
     private void OnEnable()
     {
         UpdateView(Manager.Battle.BattleTime);
@@ -22,6 +24,7 @@ public class Timer : MonoBehaviour
         //Manager.Battle.BattleEnd(); 왜 작동 안하는지는 나중에...
         Manager.Battle.OntimeChanged -= UpdateView;
         //Manager.UI.ShowPopUpUI(pauseUIPrefab);
+        Manager.Battle.OntimeChanged -= UpdateView;
     }
     private void Update()
     {
@@ -33,15 +36,13 @@ public class Timer : MonoBehaviour
         {
             Manager.Battle.BattleTime = 0.0f;
             //Manager.Battle.BattleSceneEnd();
+            battleEnd.SetActive(true);
         }
     }
-    
     private void UpdateView(float value)
     {
         int minutes = Mathf.FloorToInt(Manager.Battle.BattleTime / 60);
         int seconds = Mathf.FloorToInt(Manager.Battle.BattleTime % 60);
         text.text = string.Format("{0:00}:{1:00}", minutes, seconds);
     }
-    
-    
 }

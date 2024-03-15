@@ -387,7 +387,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &263544590
 RectTransform:
   m_ObjectHideFlags: 0
@@ -451,9 +451,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: UnityEngine.Object, UnityEngine
-        m_MethodName: 
+      - m_Target: {fileID: 505881397}
+        m_TargetAssemblyTypeName: BattleScene, Assembly-CSharp
+        m_MethodName: BattleEnd
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -1161,7 +1161,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   text: {fileID: 681643204}
   extratime: 0
-  battleEnd: {fileID: 0}
+  battleEnd: {fileID: 263544589}
 --- !u!114 &681643204
 MonoBehaviour:
   m_ObjectHideFlags: 0

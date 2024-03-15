@@ -3,16 +3,15 @@ using UnityEngine;
 
 public class GameManager : Singleton<GameManager>
 {
-    public List<Human> ourHuman = new List<Human>();
-    public List<Human> enemyHunan = new List<Human> (); 
+    public List<Pilot> ourpilot = new List<Pilot>();
+    public List<Pilot> enemypilot = new List<Pilot> ();
 
-
-    public void Scout(Human human)
+    public void Scout(Pilot pilot)
     {
-        if (ourHuman.Count < 3) 
+        if (ourpilot.Count < 3) 
         {              
-            ourHuman.Add(human);
+            ourpilot.Add(pilot);
+            Debug.Log($"{ourpilot[0]}");
         }
     }
-
 }

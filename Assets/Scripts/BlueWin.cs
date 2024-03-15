@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Pilot : MonoBehaviour
+public class BlueWin : MonoBehaviour
 {
     
 }

@@ -14,5 +14,6 @@ public class BattleScene : BaseScene
     {
         Manager.Scene.LoadScene("EndScene");
     }
+    //public void 
 
 }
