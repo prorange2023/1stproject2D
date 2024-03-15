@@ -30,7 +30,7 @@ public class BattleManager : Singleton<BattleManager>
     [SerializeField] int redPoint;
     [SerializeField] float battleTime;
     [SerializeField] float RezenTime;
-    
+    [SerializeField] GameObject endButton;    
 
     public List<BattleAI> redGrave = new List<BattleAI>();
     public List<BattleAI> blueGrave = new List<BattleAI>();
@@ -75,7 +75,7 @@ public class BattleManager : Singleton<BattleManager>
     
     public void BattleSceneEnd()
     {
-
+        endButton.SetActive(true);
     }
     public void OnBlueUnitDead()
     {
@@ -116,7 +116,7 @@ public class BattleManager : Singleton<BattleManager>
             battleai.gameObject.transform.position = new Vector3(12.9f, -5.74f, 0);
         }
     }
-
+    
     //blueTeam1 = blueAI[0];
     public void OnTriggerEnter2D(Collider2D other)
     {

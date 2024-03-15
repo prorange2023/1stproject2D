@@ -15,7 +15,6 @@ public class TitleScene : BaseScene
         //bool exist = Manager.Data.ExistSaveData();
         //ContinueButton.interactable = exist;
     }
-
     public override IEnumerator LoadingRoutine()
     {
         yield return null;
@@ -24,7 +23,7 @@ public class TitleScene : BaseScene
     public void NewGame()
     {
         Manager.Data.NewData();
-        Manager.Scene.LoadScene("BattleScene");
+        Manager.Scene.LoadScene("ManageMentScene");
     }
 
     //public void ContinueGame()
