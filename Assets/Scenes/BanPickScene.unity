@@ -722,7 +722,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 687dc2fa64593d14c957a9b1923af2b7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  animator: {fileID: 0}
+  runner: {fileID: 0}
 --- !u!4 &286669000
 Transform:
   m_ObjectHideFlags: 0
@@ -921,7 +921,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &382740854
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1744,6 +1744,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   animator: {fileID: 606905251}
+  mybutton: {fileID: 0}
+  ChampPrefab: {fileID: 0}
+  renderer: {fileID: 0}
 --- !u!114 &606905254
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1958,6 +1961,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   animator: {fileID: 816541756}
+  mybutton: {fileID: 0}
+  ChampPrefab: {fileID: 0}
+  renderer: {fileID: 0}
 --- !u!61 &816541755
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -3433,7 +3439,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1310478722
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3447,6 +3453,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   animator: {fileID: 1310478724}
+  mybutton: {fileID: 0}
+  ChampPrefab: {fileID: 0}
+  renderer: {fileID: 0}
 --- !u!61 &1310478723
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -5866,6 +5875,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   animator: {fileID: 2048979549}
+  mybutton: {fileID: 0}
+  ChampPrefab: {fileID: 0}
+  renderer: {fileID: 0}
 --- !u!61 &2048979548
 BoxCollider2D:
   m_ObjectHideFlags: 0

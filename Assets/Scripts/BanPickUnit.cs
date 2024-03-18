@@ -9,7 +9,7 @@ public class BanPickUnit : MonoBehaviour, ISelectable
     [SerializeField] Animator animator;
     [SerializeField] Button mybutton;
     [SerializeField] GameObject ChampPrefab;
-    [SerializeField] SpriteRenderer renderer;
+    [SerializeField] SpriteRenderer sprenderer;
     public void OnEnable()
     {
         animator.SetLayerWeight(1, 1);
@@ -31,7 +31,7 @@ public class BanPickUnit : MonoBehaviour, ISelectable
     }
     public void Buttonstop(SpriteRenderer sprite, Button button)
     {
-        sprite = renderer;
+        sprite = sprenderer;
         button = mybutton;
         sprite.color = new Color(118, 118, 118);
         button.enabled = false;
