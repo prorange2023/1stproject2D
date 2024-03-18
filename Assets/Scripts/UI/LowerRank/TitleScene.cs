@@ -24,6 +24,19 @@ public class TitleScene : BaseScene
     {
         Manager.Data.NewData();
         Manager.Scene.LoadScene("ManageMentScene");
+        for (int i = 0; i < 2; i++)
+        {
+            Manager.Game.BluePopName.Add("BBB");
+            Manager.Game.BluePopAtk.Add(7);
+            Manager.Game.BluePopDef.Add(7);
+        }
+        for (int i = 0; i < 3; i++)
+        {
+            Manager.Game.RedPopName.Add("AAA");
+            Manager.Game.RedPopAtk.Add(7);
+            Manager.Game.RedPopDef.Add(7);
+        }
+
     }
 
     //public void ContinueGame()

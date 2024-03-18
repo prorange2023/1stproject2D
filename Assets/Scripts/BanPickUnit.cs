@@ -1,32 +1,44 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
-public class BanPick : MonoBehaviour
+public class BanPickUnit : MonoBehaviour, ISelectable
 {
 
     [SerializeField] Animator animator;
+    [SerializeField] Button mybutton;
+    [SerializeField] GameObject ChampPrefab;
+    [SerializeField] SpriteRenderer renderer;
     public void OnEnable()
     {
         animator.SetLayerWeight(1, 1);
     }
     public void OnMouseEnter()
     {
-        Debug.Log("OnMouseEnter");
+        
         animator.SetBool("Enter", true);
     }
     public void OnMouseExit()
     {
-        Debug.Log("OnMouseExit");
+        
         animator.SetBool("Enter", false);
     }
     public void OnMouseDown()
     {
-        Debug.Log("mouseDown");
+        
         animator.SetBool("Down", true);
     }
-    public void TeamChoice()
+    public void Buttonstop(SpriteRenderer sprite, Button button)
     {
+        sprite = renderer;
+        button = mybutton;
+        sprite.color = new Color(118, 118, 118);
+        button.enabled = false;
+    }
+    public void AddChamp(GameObject gameobject)
+    {
+        gameobject = ChampPrefab;
         
     }
 }

@@ -1,29 +1,29 @@
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 using TMPro;
-using System.Buffers;
+using UnityEngine;
 
-public class Athlete : Pilot
+public class BanPickRed02 : MonoBehaviour
 {
+    [SerializeField] SpriteRenderer spriteRenderer;
     [SerializeField] TMP_Text athleteName;
     [SerializeField] TMP_Text athleteAttack;
     [SerializeField] TMP_Text athleteDefence;
 
-    public string gName;
+    public string pilotName;
     public int attack;
     public int defence;
     public void OnEnable()
     {
+        //spriteRenderer.sprite = Manager.Game.renderers[0];
+        pilotName = Manager.Game.RedPopName[2];
+        attack = Manager.Game.RedPopAtk[2];
+        defence = Manager.Game.RedPopDef[2];
 
-        gName = ("boxer");
-        attack = Manager.Game.blueAttack;
-        defence = Manager.Game.blueDefence;
 
-
-        athleteName.text = gName;
-        
+        athleteName.text = pilotName;
         athleteAttack.text = attack.ToString();
         athleteDefence.text = defence.ToString();
     }
+
 }

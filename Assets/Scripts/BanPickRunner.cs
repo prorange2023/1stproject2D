@@ -1,9 +1,216 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.IO.LowLevel.Unsafe;
 using UnityEngine;
 
 public class BanpickRunner : MonoBehaviour
 {
+    public enum State
+    {
+        Start, BanTurn01, BanTurn02, PickTurn01, PickTurn02, PickTurn03, PickTurn04
+    }
+
+    public State state;
+    public int ActPoint;
+    private StateMachine stateMachine;
+
+    private void Awake()
+    {
+        state = State.Start;
+        stateMachine = gameObject.AddComponent<StateMachine>();
+        stateMachine.AddState(State.Start, new StartState(this));
+        stateMachine.AddState(State.BanTurn01, new BanTurn01State(this));
+        stateMachine.AddState(State.BanTurn02, new BanTurn02State(this));
+        stateMachine.AddState(State.PickTurn01, new PickTurn01State(this));
+        stateMachine.AddState(State.PickTurn02, new PickTurn02State(this));
+        stateMachine.AddState(State.PickTurn03, new PickTurn03State(this));
+        stateMachine.AddState(State.PickTurn04, new PickTurn04State(this));
+        stateMachine.InitState(State.Start);
+        BanPickStart();
+    }
+    void BanPickStart()
+    {
+        state = State.BanTurn01;
+    }
+
+    public void PlayerBanturn()
+    {
+        //밴 애니메이션 실행
+        // 선택 가능한 오브젝트에서 제외
+    }
+    public void Pick()
+    { 
+                
+    }
+
+    private class BanpickRunnerState : BaseState
+    {
+        protected BanpickRunner owner;
+        
+        public BanpickRunnerState(BanpickRunner owner)
+        {
+            this.owner = owner;
+        }
+        
+    }
+    private class StartState : BanpickRunnerState
+    {
+
+        public StartState(BanpickRunner owner) : base(owner) { }
+        public override void Enter()
+        {
+            owner.ActPoint = 1;
+        }
+        public override void Update()
+        {
+            
+        }
+        public override void Transition()
+        {
+            if (owner.ActPoint == 0)
+            {
+                ChangeState(State.BanTurn01);
+            }
+        }
+    }
+
+    private class BanTurn01State : BanpickRunnerState
+    {
+
+        public BanTurn01State(BanpickRunner owner) : base(owner) { }
+        public override void Enter()
+        {
+            owner.ActPoint = 1;
+        }
+        public override void Update()
+        {
+
+        }
+        public override void Transition()
+        {
+            if (owner.ActPoint == 0)
+            {
+                ChangeState(State.BanTurn01);
+
+            }
+        }
+    }
+    private class BanTurn02State : BanpickRunnerState
+    {
+
+        public BanTurn02State(BanpickRunner owner) : base(owner) { }
+        public override void Enter()
+        {
+            owner.ActPoint = 1;
+        }
+        public override void Update()
+        {
+
+        }
+        public override void Transition()
+        {
+            if (owner.ActPoint == 0)
+            {
+                ChangeState(State.PickTurn01);
+                owner.ActPoint = 1;
+            }
+        }
+    }
+
+    private class PickTurn01State : BanpickRunnerState
+    {
+
+        public PickTurn01State(BanpickRunner owner) : base(owner) { }
+        public override void Enter()
+        {
+
+            owner.ActPoint = 1;
+        }
+        public override void Update()
+        {
+
+        }
+        public override void Transition()
+        {
+            if (owner.ActPoint == 0)
+            {
+                ChangeState(State.PickTurn02);
+                
+            }
+        }
+    }
+    private class PickTurn02State : BanpickRunnerState
+    {
+
+        public PickTurn02State(BanpickRunner owner) : base(owner) { }
+        public override void Enter()
+        {
+            owner.ActPoint = 1;
+        }
+        public override void Update()
+        {
+
+        }
+        public override void Transition()
+        {
+            if (owner.ActPoint == 0)
+            {
+                ChangeState(State.PickTurn03);
+                owner.ActPoint = 1;
+            }
+        }
+    }
+    private class PickTurn03State : BanpickRunnerState
+    {
+
+        public PickTurn03State(BanpickRunner owner) : base(owner) { }
+        public override void Enter()
+        {
+
+        }
+        public override void Update()
+        {
+
+        }
+        public override void Transition()
+        {
+            if (owner.ActPoint == 0)
+            {
+                ChangeState(State.PickTurn04);
+                owner.ActPoint = 1;
+            }
+        }
+    }
+    private class PickTurn04State : BanpickRunnerState
+    {
+        public PickTurn04State(BanpickRunner owner) : base(owner) { }
+        public override void Enter()
+        {
+            owner.ActPoint = 1;
+        }
+        public override void Update()
+        {
+
+        }
+        public override void Transition()
+        {
+            if (owner.ActPoint == 0)
+            {
+                
+            }
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
     //public GameManager gameManager
     //{
     //    set
