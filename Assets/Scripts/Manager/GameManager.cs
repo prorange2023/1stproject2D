@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class GameManager : Singleton<GameManager>
 {
@@ -28,10 +29,14 @@ public class GameManager : Singleton<GameManager>
     public List<int> RedPopAtk = new List<int>();
     public List<int> RedPopDef = new List<int>();
 
-    [Header("BanPick")]
-    public Dictionary<string, BattleAI> BlueTeam =  new Dictionary<string, BattleAI>();
-    public Dictionary<string, BattleAI> RedTeam = new Dictionary<string, BattleAI>();
+    public List<GameObject> BlueTeam = new List<GameObject>();
+    public List<GameObject> RedTeam = new List<GameObject>();
 
+    //BanPickRunner
+    public int ActPoint;
+    public bool blueTurn;
+
+    
 
     private void OnEnable()
     {
@@ -42,13 +47,5 @@ public class GameManager : Singleton<GameManager>
         redgName = ("BBB");
         redAttack = 7;
         redDefence = 7;
-    }
-    public void BlueAdd(string name, BattleAI BattleAI)
-    {
-        BlueTeam.Add(name,BattleAI);
-    }
-    public void RedAdd(string name, BattleAI BattleAI)
-    {
-        RedTeam.Add(name, BattleAI);
     }
 }

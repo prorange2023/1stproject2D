@@ -44,3 +44,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d4fcfa33b2f5d5e47b5fc920f8e1da03, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ourpilot: []
+  enemypilot: []
+  bluegName: 
+  blueAttack: 0
+  blueDefence: 0
+  BlueRenderers: []
+  BluePopName: []
+  BluePopAtk: 
+  BluePopDef: 
+  redgName: 
+  redAttack: 0
+  redDefence: 0
+  RedRenderers: []
+  RedPopName: []
+  RedPopAtk: 
+  RedPopDef: 
+  BanButton:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}

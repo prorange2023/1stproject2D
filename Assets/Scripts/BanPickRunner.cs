@@ -1,7 +1,9 @@
+using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.IO.LowLevel.Unsafe;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class BanpickRunner : MonoBehaviour
 {
@@ -11,8 +13,13 @@ public class BanpickRunner : MonoBehaviour
     }
 
     public State state;
-    public int ActPoint;
+    
     private StateMachine stateMachine;
+    
+
+    [Header("BanPickButton")]
+    public Button[] BanButton;
+    public Button[] PickButton;
 
     private void Awake()
     {
@@ -33,14 +40,13 @@ public class BanpickRunner : MonoBehaviour
         state = State.BanTurn01;
     }
 
-    public void PlayerBanturn()
-    {
-        //밴 애니메이션 실행
-        // 선택 가능한 오브젝트에서 제외
-    }
+    
     public void Pick()
-    { 
-                
+    {
+        if (Manager.Game.blueTurn == true)
+        {
+            Manager.Game.BlueTeam.Add(gameObject);
+        }
     }
 
     private class BanpickRunnerState : BaseState
@@ -51,7 +57,37 @@ public class BanpickRunner : MonoBehaviour
         {
             this.owner = owner;
         }
-        
+
+        public void EnablePickButton()
+        {
+            foreach (var button in owner.PickButton)
+            {
+                button.interactable = true; // 배열에 있는 모든 버튼을 활성화합니다.
+            }
+        }
+        public void DisablePickButton()
+        {
+            foreach (var button in owner.PickButton)
+            {
+                button.interactable = false; // 배열에 있는 모든 버튼을 비활성화합니다.
+            }
+        }
+        public void EnableBanButton()
+        {
+            foreach (var button in owner.BanButton)
+            {
+                button.interactable = true; // 배열에 있는 모든 버튼을 활성화합니다.
+            }
+        }
+        public void DisableBanButton()
+        {
+            foreach (var button in owner.BanButton)
+            {
+                button.interactable = false; // 배열에 있는 모든 버튼을 비활성화합니다.
+            }
+        }
+
+
     }
     private class StartState : BanpickRunnerState
     {
@@ -59,7 +95,7 @@ public class BanpickRunner : MonoBehaviour
         public StartState(BanpickRunner owner) : base(owner) { }
         public override void Enter()
         {
-            owner.ActPoint = 1;
+            Manager.Game.ActPoint = 1;
         }
         public override void Update()
         {
@@ -67,7 +103,7 @@ public class BanpickRunner : MonoBehaviour
         }
         public override void Transition()
         {
-            if (owner.ActPoint == 0)
+            if (Manager.Game.ActPoint == 0)
             {
                 ChangeState(State.BanTurn01);
             }
@@ -80,7 +116,12 @@ public class BanpickRunner : MonoBehaviour
         public BanTurn01State(BanpickRunner owner) : base(owner) { }
         public override void Enter()
         {
-            owner.ActPoint = 1;
+            Manager.Game.blueTurn = true;
+            Manager.Game.ActPoint = 1;
+            EnableBanButton();
+            
+            
+            DisablePickButton();
         }
         public override void Update()
         {
@@ -88,7 +129,7 @@ public class BanpickRunner : MonoBehaviour
         }
         public override void Transition()
         {
-            if (owner.ActPoint == 0)
+            if (Manager.Game.ActPoint == 0)
             {
                 ChangeState(State.BanTurn01);
 
@@ -101,7 +142,12 @@ public class BanpickRunner : MonoBehaviour
         public BanTurn02State(BanpickRunner owner) : base(owner) { }
         public override void Enter()
         {
-            owner.ActPoint = 1;
+            Manager.Game.blueTurn = false;
+            Manager.Game.ActPoint = 1;
+            EnableBanButton();
+            
+            
+            DisablePickButton();
         }
         public override void Update()
         {
@@ -109,10 +155,10 @@ public class BanpickRunner : MonoBehaviour
         }
         public override void Transition()
         {
-            if (owner.ActPoint == 0)
+            if (Manager.Game.ActPoint == 0)
             {
                 ChangeState(State.PickTurn01);
-                owner.ActPoint = 1;
+                Manager.Game.ActPoint = 1;
             }
         }
     }
@@ -123,8 +169,12 @@ public class BanpickRunner : MonoBehaviour
         public PickTurn01State(BanpickRunner owner) : base(owner) { }
         public override void Enter()
         {
-
-            owner.ActPoint = 1;
+            Manager.Game.blueTurn = true;
+            Manager.Game.ActPoint = 1;
+           
+            DisableBanButton();
+            EnablePickButton();
+           
         }
         public override void Update()
         {
@@ -132,7 +182,7 @@ public class BanpickRunner : MonoBehaviour
         }
         public override void Transition()
         {
-            if (owner.ActPoint == 0)
+            if (Manager.Game.ActPoint == 0)
             {
                 ChangeState(State.PickTurn02);
                 
@@ -145,7 +195,12 @@ public class BanpickRunner : MonoBehaviour
         public PickTurn02State(BanpickRunner owner) : base(owner) { }
         public override void Enter()
         {
-            owner.ActPoint = 1;
+            Manager.Game.blueTurn = false;
+            Manager.Game.ActPoint = 1;
+            
+            DisableBanButton();
+            EnablePickButton();
+
         }
         public override void Update()
         {
@@ -153,10 +208,10 @@ public class BanpickRunner : MonoBehaviour
         }
         public override void Transition()
         {
-            if (owner.ActPoint == 0)
+            if (Manager.Game.ActPoint == 0)
             {
                 ChangeState(State.PickTurn03);
-                owner.ActPoint = 1;
+                
             }
         }
     }
@@ -166,7 +221,11 @@ public class BanpickRunner : MonoBehaviour
         public PickTurn03State(BanpickRunner owner) : base(owner) { }
         public override void Enter()
         {
-
+            Manager.Game.blueTurn = true;
+            Manager.Game.ActPoint = 1;
+            
+            DisableBanButton();
+            EnablePickButton();
         }
         public override void Update()
         {
@@ -174,10 +233,10 @@ public class BanpickRunner : MonoBehaviour
         }
         public override void Transition()
         {
-            if (owner.ActPoint == 0)
+            if (Manager.Game.ActPoint == 0)
             {
                 ChangeState(State.PickTurn04);
-                owner.ActPoint = 1;
+                
             }
         }
     }
@@ -186,7 +245,12 @@ public class BanpickRunner : MonoBehaviour
         public PickTurn04State(BanpickRunner owner) : base(owner) { }
         public override void Enter()
         {
-            owner.ActPoint = 1;
+            Manager.Game.blueTurn = false;
+            Manager.Game.ActPoint = 1;
+            
+            DisableBanButton();
+            EnablePickButton();
+            
         }
         public override void Update()
         {
@@ -194,9 +258,9 @@ public class BanpickRunner : MonoBehaviour
         }
         public override void Transition()
         {
-            if (owner.ActPoint == 0)
+            if (Manager.Game.ActPoint == 0)
             {
-                
+                Manager.Scene.LoadScene("battleScene");
             }
         }
     }

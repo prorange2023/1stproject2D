@@ -16,7 +16,7 @@ public class BattleManager : Singleton<BattleManager>
     [SerializeField] LayerMask redUlti;
     [SerializeField] LayerMask blueUlti;
     [SerializeField] LayerMask obstacleMask;
-
+    //왜그러는거야 오류 뭐야
     public List<BattleAI> blueAI = new List<BattleAI>();
     public List<BattleAI> redAI = new List<BattleAI>();
     public List<GameObject> AllAI = new List<GameObject>();
